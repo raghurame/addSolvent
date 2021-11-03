@@ -610,19 +610,20 @@ DUMP *recenterCoords (DUMP *traj_in, DUMP com, BOUNDS dumpDimension, int nAtoms)
 BOUNDS computeSimBoxDimension (DUMP chainDimension)
 {
 	BOUNDS simBoxDimension;
-	float scaleX, scaleY, scaleZ;
+	float scaleX, scaleY, scaleZ, maxCutoff;
 
-	printf("%s\n", "Simulation box dimension will be decided based on max chain dimension according to the expression below...\n xlo = maxDimension * -x\n xhi = maxDimension * x\n ylo = maxDimension * -y\n yhi = maxDimension * y\n zlo = maxDimension * -z\n zhi = maxDimension * z\n");
+	printf("%s\n", "Simulation box dimension will be decided based on max chain dimension and longest cut-off distance according to the expression below...\n xlo = (maxDimension + longest cut-off) * -x\n xhi = (maxDimension + longest cut-off) * x\n ylo = (maxDimension + longest cut-off) * -y\n yhi = (maxDimension + longest cut-off) * y\n zlo = (maxDimension + longest cut-off) * -z\n zhi = (maxDimension + longest cut-off) * z\n");
 	printf("%s ", "Enter x:"); scanf ("%f", &scaleX); 
 	printf("%s ", "Enter y:"); scanf ("%f", &scaleY); 
 	printf("%s ", "Enter z:"); scanf ("%f", &scaleZ); 
+	printf("%s\n", "Longest cut-off (including LJ/kspace)"); scanf ("%f", &maxCutoff);
 
-	simBoxDimension.xlo = (chainDimension.x / 2) * -scaleX;
-	simBoxDimension.xhi = (chainDimension.x / 2) * scaleX;
-	simBoxDimension.ylo = (chainDimension.y / 2) * -scaleY;
-	simBoxDimension.yhi = (chainDimension.y / 2) * scaleY;
-	simBoxDimension.zlo = (chainDimension.z / 2) * -scaleZ;
-	simBoxDimension.zhi = (chainDimension.z / 2) * scaleZ;
+	simBoxDimension.xlo = ((chainDimension.x / 2) + maxCutoff) * -scaleX;
+	simBoxDimension.xhi = ((chainDimension.x / 2) + maxCutoff) * scaleX;
+	simBoxDimension.ylo = ((chainDimension.y / 2) + maxCutoff) * -scaleY;
+	simBoxDimension.yhi = ((chainDimension.y / 2) + maxCutoff) * scaleY;
+	simBoxDimension.zlo = ((chainDimension.z / 2) + maxCutoff) * -scaleZ;
+	simBoxDimension.zhi = ((chainDimension.z / 2) + maxCutoff) * scaleZ;
 
 	printf("\nSimulation box dimension (recalculated)\n\n xlo: %f\txhi: %f (length: %f)\n ylo: %f\tyhi: %f (length: %f)\n zlo: %f\tzhi: %f (length: %f)\n", simBoxDimension.xlo, simBoxDimension.xhi, fabs (simBoxDimension.xhi) + fabs (simBoxDimension.xlo), simBoxDimension.ylo, simBoxDimension.yhi, fabs (simBoxDimension.yhi) + fabs (simBoxDimension.ylo), simBoxDimension.zlo, simBoxDimension.zhi, fabs (simBoxDimension.zhi) + fabs (simBoxDimension.zlo));
 
@@ -652,11 +653,14 @@ int findNWater (float waterFraction, BOUNDS simBoxDimension)
 
 DATA_ATOMS *populateButanediol (BOUNDS simBoxDimension, int nButanediol)
 {
+	fprintf(stdout, "Adding %d butanediol molecules...\n", nButanediol);
+	fflush (stdout);
+
 	DATA_ATOMS *butanediol;
 	butanediol = (DATA_ATOMS *) calloc (nButanediol, sizeof (DATA_ATOMS));
 
 	float nBins_x = cbrt (nButanediol), nBins_y = cbrt (nButanediol), nBins_z =cbrt (nButanediol);
-	float xDistSeparation = (simBoxDimension.xhi + simBoxDimension.xlo) / nBins_x, yDistSeparation = (simBoxDimension.yhi + simBoxDimension.ylo) / nBins_y, zDistSeparation = (simBoxDimension.zhi + simBoxDimension.zlo) / nBins_z;
+	float xDistSeparation = (fabs (simBoxDimension.xhi) + fabs (simBoxDimension.xlo)) / nBins_x, yDistSeparation = (fabs (simBoxDimension.yhi) + fabs (simBoxDimension.ylo)) / nBins_y, zDistSeparation = (fabs (simBoxDimension.zhi) + fabs (simBoxDimension.zlo)) / nBins_z;
 	int currentButanediol = 0;
 
 	// Distribute the butanediol molecules evenly
@@ -679,6 +683,9 @@ DATA_ATOMS *populateButanediol (BOUNDS simBoxDimension, int nButanediol)
 
 DATA_ATOMS *populateWater (BOUNDS simBoxDimension, int nWater)
 {
+	fprintf(stdout, "Adding %d water molecules...\n", nWater);
+	fflush (stdout);
+
 	DATA_ATOMS *water;
 	water = (DATA_ATOMS *) calloc (nWater, sizeof (DATA_ATOMS));
 
@@ -704,9 +711,9 @@ DATA_ATOMS *populateWater (BOUNDS simBoxDimension, int nWater)
 	return water;
 }
 
-void createWaterTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **angles, int nWater, DATA_ATOMS *water, DATAFILE_INFO datafile_raw, DATAFILE_INFO datafile)
+void createWaterTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **angles, int nWater, DATA_ATOMS *water, DATAFILE_INFO *datafile_raw, DATAFILE_INFO *datafile)
 {
-	int currentIDAtoms = datafile_raw.nAtoms, currentIDBonds = datafile_raw.nBonds, currentIDAngles = datafile_raw.nAngles;
+	int currentIDAtoms = (*datafile_raw).nAtoms, currentIDBonds = (*datafile_raw).nBonds, currentIDAngles = (*datafile_raw).nAngles;
 	int O_ID, H1_ID, H2_ID;
 
 	for (int i = 0; i < nWater; ++i)
@@ -715,7 +722,7 @@ void createWaterTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **
 		(*atoms)[currentIDAtoms].id = (*atoms)[currentIDAtoms-1].id + 1;
 		O_ID = (*atoms)[currentIDAtoms-1].id + 1;
 		(*atoms)[currentIDAtoms].molType = 2;
-		(*atoms)[currentIDAtoms].atomType = 8;
+		(*atoms)[currentIDAtoms].atomType = (*datafile).nAtomTypes + 1;
 		(*atoms)[currentIDAtoms].charge = -0.83;
 		(*atoms)[currentIDAtoms].x = water[i].x;
 		(*atoms)[currentIDAtoms].y = water[i].y;
@@ -727,7 +734,7 @@ void createWaterTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **
 		(*atoms)[currentIDAtoms].id = (*atoms)[currentIDAtoms-1].id + 1;
 		H1_ID = (*atoms)[currentIDAtoms-1].id + 1;
 		(*atoms)[currentIDAtoms].molType = 2;
-		(*atoms)[currentIDAtoms].atomType = 9;
+		(*atoms)[currentIDAtoms].atomType = (*datafile).nAtomTypes + 2;
 		(*atoms)[currentIDAtoms].charge = 0.415;
 		(*atoms)[currentIDAtoms].x = water[i].x - 0.32;
 		(*atoms)[currentIDAtoms].y = water[i].y + 0.13;
@@ -738,7 +745,7 @@ void createWaterTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **
 		(*atoms)[currentIDAtoms].id = (*atoms)[currentIDAtoms-1].id + 1;
 		H2_ID = (*atoms)[currentIDAtoms-1].id + 1;
 		(*atoms)[currentIDAtoms].molType = 2;
-		(*atoms)[currentIDAtoms].atomType = 9;
+		(*atoms)[currentIDAtoms].atomType = (*datafile).nAtomTypes + 2;
 		(*atoms)[currentIDAtoms].charge = 0.415;
 		(*atoms)[currentIDAtoms].x = water[i].x + 0.97;
 		(*atoms)[currentIDAtoms].y = water[i].y;
@@ -748,31 +755,39 @@ void createWaterTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **
 		// Adding bonds (bond1 and bond2 are identical)
 		// Bond 1
 		(*bonds)[currentIDBonds].id = (*bonds)[currentIDBonds-1].id + 1;
-		(*bonds)[currentIDBonds].bondType = 7;
+		(*bonds)[currentIDBonds].bondType = (*datafile).nBondTypes + 1;
 		(*bonds)[currentIDBonds].atom1 = H2_ID;
 		(*bonds)[currentIDBonds].atom2 = O_ID;
 		currentIDBonds++;
 
 		// Bond 2
 		(*bonds)[currentIDBonds].id = (*bonds)[currentIDBonds-1].id + 1;
-		(*bonds)[currentIDBonds].bondType = 7;
+		(*bonds)[currentIDBonds].bondType = (*datafile).nBondTypes + 1;
 		(*bonds)[currentIDBonds].atom1 = H1_ID;
 		(*bonds)[currentIDBonds].atom2 = O_ID;
 		currentIDBonds++;
 
 		// Adding angles
 		(*angles)[currentIDAngles].id = (*angles)[currentIDAngles-1].id + 1;
-		(*angles)[currentIDAngles].angleType = 10;
+		(*angles)[currentIDAngles].angleType = (*datafile).nAngleTypes + 1;
 		(*angles)[currentIDAngles].atom1 = H2_ID;
 		(*angles)[currentIDAngles].atom2 = O_ID;
 		(*angles)[currentIDAngles].atom3 = H1_ID;
 		currentIDAngles++;
 	}
+
+	(*datafile).nAtomTypes += 2;
+	(*datafile).nBondTypes += 1;
+	(*datafile).nAngleTypes += 1;
+
+	(*datafile_raw).nAtoms = currentIDAtoms;
+	(*datafile_raw).nBonds = currentIDBonds;
+	(*datafile_raw).nAngles = currentIDAngles;
 }
 
-void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **angles, DATA_DIHEDRALS **dihedrals, int nButanediol, DATA_ATOMS *butanediol, DATAFILE_INFO datafile_raw, DATAFILE_INFO datafile)
+void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **angles, DATA_DIHEDRALS **dihedrals, int nButanediol, DATA_ATOMS *butanediol, DATAFILE_INFO *datafile_raw, DATAFILE_INFO *datafile)
 {
-	int currentIDAtoms = datafile.nAtoms, currentIDBonds = datafile.nBonds, currentIDAngles = datafile.nAngles, currentIDDihedrals = datafile.nDihedrals;
+	int currentIDAtoms = (*datafile_raw).nAtoms, currentIDBonds = (*datafile_raw).nBonds, currentIDAngles = (*datafile_raw).nAngles, currentIDDihedrals = (*datafile_raw).nDihedrals;
 
 	int H1_ID, O1_ID, C1_ID, C2_ID, C3_ID, C4_ID, O2_ID, H2_ID;
 
@@ -784,7 +799,7 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 		(*atoms)[currentIDAtoms].id = (*atoms)[currentIDAtoms-1].id + 1;
 		H1_ID = (*atoms)[currentIDAtoms-1].id + 1;
 		(*atoms)[currentIDAtoms].molType = 3;
-		(*atoms)[currentIDAtoms].atomType = 10;
+		(*atoms)[currentIDAtoms].atomType = (*datafile).nAtomTypes + 1;
 		(*atoms)[currentIDAtoms].charge = 0.435;
 		(*atoms)[currentIDAtoms].x = butanediol[i].x - 2.18;
 		(*atoms)[currentIDAtoms].y = butanediol[i].y + 1.29;
@@ -795,7 +810,7 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 		(*atoms)[currentIDAtoms].id = (*atoms)[currentIDAtoms-1].id + 1;
 		O1_ID = (*atoms)[currentIDAtoms-1].id + 1;
 		(*atoms)[currentIDAtoms].molType = 3;
-		(*atoms)[currentIDAtoms].atomType = 11;
+		(*atoms)[currentIDAtoms].atomType = (*datafile).nAtomTypes + 2;
 		(*atoms)[currentIDAtoms].charge = -0.7;
 		(*atoms)[currentIDAtoms].x = butanediol[i].x - 1.93;
 		(*atoms)[currentIDAtoms].y = butanediol[i].y + 0.34;
@@ -806,7 +821,7 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 		(*atoms)[currentIDAtoms].id = (*atoms)[currentIDAtoms-1].id + 1;
 		C1_ID = (*atoms)[currentIDAtoms-1].id + 1;
 		(*atoms)[currentIDAtoms].molType = 3;
-		(*atoms)[currentIDAtoms].atomType = 12;
+		(*atoms)[currentIDAtoms].atomType = (*datafile).nAtomTypes + 3;
 		(*atoms)[currentIDAtoms].charge = 0.265;
 		(*atoms)[currentIDAtoms].x = butanediol[i].x - 0.53;
 		(*atoms)[currentIDAtoms].y = butanediol[i].y + 0.34;
@@ -817,7 +832,7 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 		(*atoms)[currentIDAtoms].id = (*atoms)[currentIDAtoms-1].id + 1;
 		C2_ID = (*atoms)[currentIDAtoms-1].id + 1;
 		(*atoms)[currentIDAtoms].molType = 3;
-		(*atoms)[currentIDAtoms].atomType = 12;
+		(*atoms)[currentIDAtoms].atomType = (*datafile).nAtomTypes + 3;
 		(*atoms)[currentIDAtoms].charge = 0.0;
 		(*atoms)[currentIDAtoms].x = butanediol[i].x;
 		(*atoms)[currentIDAtoms].y = butanediol[i].y;
@@ -828,7 +843,7 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 		(*atoms)[currentIDAtoms].id = (*atoms)[currentIDAtoms-1].id + 1;
 		C3_ID = (*atoms)[currentIDAtoms-1].id + 1;
 		(*atoms)[currentIDAtoms].molType = 3;
-		(*atoms)[currentIDAtoms].atomType = 12;
+		(*atoms)[currentIDAtoms].atomType = (*datafile).nAtomTypes + 3;
 		(*atoms)[currentIDAtoms].charge = 0.0;
 		(*atoms)[currentIDAtoms].x = butanediol[i].x + 1.52;
 		(*atoms)[currentIDAtoms].y = butanediol[i].y;
@@ -839,7 +854,7 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 		(*atoms)[currentIDAtoms].id = (*atoms)[currentIDAtoms-1].id + 1;
 		C4_ID = (*atoms)[currentIDAtoms-1].id + 1;
 		(*atoms)[currentIDAtoms].molType = 3;
-		(*atoms)[currentIDAtoms].atomType = 12;
+		(*atoms)[currentIDAtoms].atomType = (*datafile).nAtomTypes + 3;
 		(*atoms)[currentIDAtoms].charge = 0.265;
 		(*atoms)[currentIDAtoms].x = butanediol[i].x + 2.05;
 		(*atoms)[currentIDAtoms].y = butanediol[i].y - 1.25;
@@ -850,7 +865,7 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 		(*atoms)[currentIDAtoms].id = (*atoms)[currentIDAtoms-1].id + 1;
 		O2_ID = (*atoms)[currentIDAtoms-1].id + 1;
 		(*atoms)[currentIDAtoms].molType = 3;
-		(*atoms)[currentIDAtoms].atomType = 11;
+		(*atoms)[currentIDAtoms].atomType = (*datafile).nAtomTypes + 2;
 		(*atoms)[currentIDAtoms].charge = -0.7;
 		(*atoms)[currentIDAtoms].x = butanediol[i].x + 3.44;
 		(*atoms)[currentIDAtoms].y = butanediol[i].y - 1.23;
@@ -861,7 +876,7 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 		(*atoms)[currentIDAtoms].id = (*atoms)[currentIDAtoms-1].id + 1;
 		H2_ID = (*atoms)[currentIDAtoms-1].id + 1;
 		(*atoms)[currentIDAtoms].molType = 3;
-		(*atoms)[currentIDAtoms].atomType = 10;
+		(*atoms)[currentIDAtoms].atomType = (*datafile).nAtomTypes + 1;
 		(*atoms)[currentIDAtoms].charge = 0.435;
 		(*atoms)[currentIDAtoms].x = butanediol[i].x + 3.67;
 		(*atoms)[currentIDAtoms].y = butanediol[i].y - 1.80;
@@ -871,49 +886,49 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 		// Adding bonds
 		// O---H bond
 		(*bonds)[currentIDBonds].id = (*bonds)[currentIDBonds-1].id + 1;
-		(*bonds)[currentIDBonds].bondType = 8;
+		(*bonds)[currentIDBonds].bondType = (*datafile).nBondTypes + 1;
 		(*bonds)[currentIDBonds].atom1 = H1_ID;
 		(*bonds)[currentIDBonds].atom2 = O1_ID;
 		currentIDBonds++;
 
 		// O---C bond
 		(*bonds)[currentIDBonds].id = (*bonds)[currentIDBonds-1].id + 1;
-		(*bonds)[currentIDBonds].bondType = 9;
+		(*bonds)[currentIDBonds].bondType = (*datafile).nBondTypes + 2;
 		(*bonds)[currentIDBonds].atom1 = O1_ID;
 		(*bonds)[currentIDBonds].atom2 = C1_ID;
 		currentIDBonds++;
 
 		// C---C bond
 		(*bonds)[currentIDBonds].id = (*bonds)[currentIDBonds-1].id + 1;
-		(*bonds)[currentIDBonds].bondType = 10;
+		(*bonds)[currentIDBonds].bondType = (*datafile).nBondTypes + 3;
 		(*bonds)[currentIDBonds].atom1 = C1_ID;
 		(*bonds)[currentIDBonds].atom2 = C2_ID;
 		currentIDBonds++;
 
 		// C---C bond
 		(*bonds)[currentIDBonds].id = (*bonds)[currentIDBonds-1].id + 1;
-		(*bonds)[currentIDBonds].bondType = 10;
+		(*bonds)[currentIDBonds].bondType = (*datafile).nBondTypes + 3;
 		(*bonds)[currentIDBonds].atom1 = C2_ID;
 		(*bonds)[currentIDBonds].atom2 = C3_ID;
 		currentIDBonds++;
 
 		// C---C bond
 		(*bonds)[currentIDBonds].id = (*bonds)[currentIDBonds-1].id + 1;
-		(*bonds)[currentIDBonds].bondType = 10;
+		(*bonds)[currentIDBonds].bondType = (*datafile).nBondTypes + 3;
 		(*bonds)[currentIDBonds].atom1 = C3_ID;
 		(*bonds)[currentIDBonds].atom2 = C4_ID;
 		currentIDBonds++;
 
 		// C---O bond
 		(*bonds)[currentIDBonds].id = (*bonds)[currentIDBonds-1].id + 1;
-		(*bonds)[currentIDBonds].bondType = 9;
+		(*bonds)[currentIDBonds].bondType = (*datafile).nBondTypes + 2;
 		(*bonds)[currentIDBonds].atom1 = C4_ID;
 		(*bonds)[currentIDBonds].atom2 = O2_ID;
 		currentIDBonds++;
 
 		// O---H bond
 		(*bonds)[currentIDBonds].id = (*bonds)[currentIDBonds-1].id + 1;
-		(*bonds)[currentIDBonds].bondType = 8;
+		(*bonds)[currentIDBonds].bondType = (*datafile).nBondTypes + 1;
 		(*bonds)[currentIDBonds].atom1 = O2_ID;
 		(*bonds)[currentIDBonds].atom2 = H2_ID;
 		currentIDBonds++;
@@ -921,7 +936,7 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 		// Adding angles
 		// H---O---C angle
 		(*angles)[currentIDAngles].id = (*angles)[currentIDAngles-1].id + 1;
-		(*angles)[currentIDAngles].angleType = 11;
+		(*angles)[currentIDAngles].angleType = (*datafile).nAngleTypes + 1;
 		(*angles)[currentIDAngles].atom1 = H1_ID;
 		(*angles)[currentIDAngles].atom2 = O1_ID;
 		(*angles)[currentIDAngles].atom3 = C1_ID;
@@ -929,7 +944,7 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 
 		// O---C---C angle
 		(*angles)[currentIDAngles].id = (*angles)[currentIDAngles-1].id + 1;
-		(*angles)[currentIDAngles].angleType = 12;
+		(*angles)[currentIDAngles].angleType = (*datafile).nAngleTypes + 2;
 		(*angles)[currentIDAngles].atom1 = O1_ID;
 		(*angles)[currentIDAngles].atom2 = C1_ID;
 		(*angles)[currentIDAngles].atom3 = C2_ID;
@@ -937,7 +952,7 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 
 		// C---C---C angle
 		(*angles)[currentIDAngles].id = (*angles)[currentIDAngles-1].id + 1;
-		(*angles)[currentIDAngles].angleType = 13;
+		(*angles)[currentIDAngles].angleType = (*datafile).nAngleTypes + 3;
 		(*angles)[currentIDAngles].atom1 = C1_ID;
 		(*angles)[currentIDAngles].atom2 = C2_ID;
 		(*angles)[currentIDAngles].atom3 = C3_ID;
@@ -945,7 +960,7 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 
 		// C---C---C angle
 		(*angles)[currentIDAngles].id = (*angles)[currentIDAngles-1].id + 1;
-		(*angles)[currentIDAngles].angleType = 13;
+		(*angles)[currentIDAngles].angleType = (*datafile).nAngleTypes + 3;
 		(*angles)[currentIDAngles].atom1 = C2_ID;
 		(*angles)[currentIDAngles].atom2 = C3_ID;
 		(*angles)[currentIDAngles].atom3 = C4_ID;
@@ -953,7 +968,7 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 
 		// C---C---O angle
 		(*angles)[currentIDAngles].id = (*angles)[currentIDAngles-1].id + 1;
-		(*angles)[currentIDAngles].angleType = 12;
+		(*angles)[currentIDAngles].angleType = (*datafile).nAngleTypes + 2;
 		(*angles)[currentIDAngles].atom1 = C3_ID;
 		(*angles)[currentIDAngles].atom2 = C4_ID;
 		(*angles)[currentIDAngles].atom3 = O2_ID;
@@ -961,7 +976,7 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 
 		// C---O---H angle
 		(*angles)[currentIDAngles].id = (*angles)[currentIDAngles-1].id + 1;
-		(*angles)[currentIDAngles].angleType = 11;
+		(*angles)[currentIDAngles].angleType = (*datafile).nAngleTypes + 1;
 		(*angles)[currentIDAngles].atom1 = C4_ID;
 		(*angles)[currentIDAngles].atom2 = O2_ID;
 		(*angles)[currentIDAngles].atom3 = H2_ID;
@@ -970,7 +985,7 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 		// Adding dihedrals
 		// H---O---C---C dihedral
 		(*dihedrals)[currentIDDihedrals].id = (*dihedrals)[currentIDDihedrals-1].id + 1;
-		(*dihedrals)[currentIDDihedrals].dihedralType = 10;
+		(*dihedrals)[currentIDDihedrals].dihedralType = (*datafile).nDihedralTypes + 1;
 		(*dihedrals)[currentIDDihedrals].atom1 = H1_ID;
 		(*dihedrals)[currentIDDihedrals].atom2 = O1_ID;
 		(*dihedrals)[currentIDDihedrals].atom3 = C1_ID;
@@ -979,7 +994,7 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 
 		// O---C---C---C dihedral
 		(*dihedrals)[currentIDDihedrals].id = (*dihedrals)[currentIDDihedrals-1].id + 1;
-		(*dihedrals)[currentIDDihedrals].dihedralType = 11;
+		(*dihedrals)[currentIDDihedrals].dihedralType = (*datafile).nDihedralTypes + 2;
 		(*dihedrals)[currentIDDihedrals].atom1 = O1_ID;
 		(*dihedrals)[currentIDDihedrals].atom2 = C1_ID;
 		(*dihedrals)[currentIDDihedrals].atom3 = C2_ID;
@@ -988,7 +1003,7 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 
 		// C---C---C---C dihedral
 		(*dihedrals)[currentIDDihedrals].id = (*dihedrals)[currentIDDihedrals-1].id + 1;
-		(*dihedrals)[currentIDDihedrals].dihedralType = 12;
+		(*dihedrals)[currentIDDihedrals].dihedralType = (*datafile).nDihedralTypes + 3;
 		(*dihedrals)[currentIDDihedrals].atom1 = C1_ID;
 		(*dihedrals)[currentIDDihedrals].atom2 = C2_ID;
 		(*dihedrals)[currentIDDihedrals].atom3 = C3_ID;
@@ -997,7 +1012,7 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 
 		// C---C---C---O dihedral
 		(*dihedrals)[currentIDDihedrals].id = (*dihedrals)[currentIDDihedrals-1].id + 1;
-		(*dihedrals)[currentIDDihedrals].dihedralType = 11;
+		(*dihedrals)[currentIDDihedrals].dihedralType = (*datafile).nDihedralTypes + 2;
 		(*dihedrals)[currentIDDihedrals].atom1 = C2_ID;
 		(*dihedrals)[currentIDDihedrals].atom2 = C3_ID;
 		(*dihedrals)[currentIDDihedrals].atom3 = C4_ID;
@@ -1006,13 +1021,23 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 
 		// C---C---O---H dihedral
 		(*dihedrals)[currentIDDihedrals].id = (*dihedrals)[currentIDDihedrals-1].id + 1;
-		(*dihedrals)[currentIDDihedrals].dihedralType = 10;
+		(*dihedrals)[currentIDDihedrals].dihedralType = (*datafile).nDihedralTypes + 1;
 		(*dihedrals)[currentIDDihedrals].atom1 = C3_ID;
 		(*dihedrals)[currentIDDihedrals].atom2 = C4_ID;
 		(*dihedrals)[currentIDDihedrals].atom3 = O2_ID;
 		(*dihedrals)[currentIDDihedrals].atom4 = H2_ID;
 		currentIDDihedrals++;
 	}
+
+	(*datafile).nAtomTypes += 3;
+	(*datafile).nBondTypes += 3;
+	(*datafile).nAngleTypes += 3;
+	(*datafile).nDihedralTypes += 3;
+
+	(*datafile_raw).nAtoms = currentIDAtoms;
+	(*datafile_raw).nBonds = currentIDBonds;
+	(*datafile_raw).nAngles = currentIDAngles;
+	(*datafile_raw).nDihedrals = currentIDDihedrals;
 }
 
 void recalculateNAtoms (DATA_ATOMS *atoms, DATAFILE_INFO *datafile)
@@ -1212,8 +1237,8 @@ int main(int argc, char const *argv[])
 	datafile.nDihedrals += (nButanediol * 5);
 	dihedrals = (DATA_DIHEDRALS *) realloc (dihedrals, datafile.nDihedrals * sizeof (DATA_DIHEDRALS));
 
-	createButanediolTopology (&atoms, &bonds, &angles, &dihedrals, nButanediol, butanediol, datafile_raw, datafile);
-	createWaterTopology (&atoms, &bonds, &angles, nWater, water, datafile_raw, datafile);
+	createWaterTopology (&atoms, &bonds, &angles, nWater, water, &datafile_raw, &datafile);
+	createButanediolTopology (&atoms, &bonds, &angles, &dihedrals, nButanediol, butanediol, &datafile_raw, &datafile);
 
 	// Recalculating nAtomTypes, nBondsTypes, nAngleTypes and nDihedralTypes after adding new solvent molecules
 	recalculateNAtoms (atoms, &datafile);
@@ -1229,573 +1254,6 @@ int main(int argc, char const *argv[])
 	print_dataAngles (output, angles, datafile);
 	print_dataDihedrals (output, dihedrals, datafile);
 	print_dataImpropers (output, impropers, datafile);
-
-
-	// Zero the water and butanediol coordinates
-	// for (int i = 0; i < nWater; ++i)
-	// {
-	// 	water[i].x = 0; water[i].y = 0; water[i].z = 0;
-	// }
-
-	// for (int i = 0; i < nButanediol; ++i)
-	// {
-	// 	butanediol[i].x = 0; butanediol[i].y = 0; butanediol[i].z = 0;
-	// }
-
-	// int nBins_x_water = (int) boxLength.x / 3.103, nBins_y_water = (int) boxLength.y / 3.103, nBins_z_water = (int) boxLength.z / 3.103, nBins_x_butanediol = (int) boxLength.x / 8.0, nBins_y_butanediol = (int) boxLength.y / 5.0, nBins_z_butanediol = (int) boxLength.z / 3.0;
-
-	// if (nWater == 0)
-	// {
-	// 	nBins_x_water = 0;
-	// 	nBins_y_water = 0;
-	// 	nBins_z_water = 0;
-	// }
-
-	// if (nButanediol == 0)
-	// {
-	// 	nBins_x_butanediol = 0;
-	// 	nBins_y_butanediol = 0;
-	// 	nBins_z_butanediol = 0;
-	// }
-
-	// printf("nBins_x_water: %d; nBins_y_water: %d; nBins_z_water: %d\n", nBins_x_water, nBins_y_water, nBins_z_water);
-	// printf("nBins_x_butanediol: %d; nBins_y_butanediol: %d; nBins_z_butanediol: %d\n", nBins_x_butanediol, nBins_y_butanediol, nBins_z_butanediol);
-	// printf("Total number of water molecules that will fit in the simulation box: %d\n", nBins_x_water * nBins_y_water * nBins_z_water);
-
-	// int nWater_remaining = nWater, nButanediol_remaining = nButanediol, isRandomSolvent = atoi (argv[5]);
-	// int currentWater = 0, currentButanediol = 0;
-	// int butanediolOverlap = 1, waterOverlap = 1;
-
-	// To Do: 
-	// Don't ask for input on number of water molecules to be added.
-	// nButanediol can be user defined input
-	// nWater is based on the remaining free volume
-	// Convert these into functions and re-write them properly
-	// In long term, write a generalized code in python
-
-	// Butanediol molecules are added first.
-	// Butanediol molecules are added only after checking the distance
-	// between the new molecules and the existing NaPSS chain
-	// for (int i = 0; i < nBins_x_butanediol; ++i)
-	// {
-	// 	for (int j = 0; j < nBins_y_butanediol; ++j)
-	// 	{
-	// 		for (int k = 0; k < nBins_z_butanediol; ++k)
-	// 		{
-	// 			if (nButanediol_remaining)
-	// 			{
-	// 				butanediol[currentButanediol].x = ((i + 1) * 8) - (8 / 2);
-	// 				butanediol[currentButanediol].y = ((j + 1) * 5) - (5 / 2);
-	// 				butanediol[currentButanediol].z = ((k + 1) * 3) - (3 / 2);
-
-	// 				// Checking the distance between newly added butanediol and the polymer chain
-	// 				for (int j = 0; j < lineCount; ++j)
-	// 				{
-	// 					solventDistance = sqrt (pow ((butanediol[currentButanediol].x - traj[j].x), 2) + pow ((butanediol[currentButanediol].y - traj[j].y), 2) + pow ((butanediol[currentButanediol].z - traj[j].z), 2));
-
-	// 					if (solventDistance < 9)
-	// 						butanediolOverlap = 1;
-	// 					else
-	// 						butanediolOverlap = 0;
-	// 				}
-
-	// 				// Indices are updated only if there is no overlap
-	// 				if (butanediolOverlap == 0)
-	// 				{
-	// 					currentButanediol++;
-	// 					nButanediol_remaining--;
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
-
-	// // Water molecules are added after butanediol
-	// // Water molecules are only added after checking the distance between 
-	// // the new molecules and the existing NaPSS chain, and butanediol molecules
-	// for (int i = 0; i < nBins_x_water; ++i)
-	// {
-	// 	for (int j = 0; j < nBins_y_water; ++j)
-	// 	{
-	// 		for (int k = 0; k < nBins_z_water; ++k)
-	// 		{
-	// 			if (nWater_remaining)
-	// 			{
-	// 				water[currentWater].x = ((i + 1) * 3.103) - (3.103 / 2);
-	// 				water[currentWater].y = ((j + 1) * 3.103) - (3.103 / 2);
-	// 				water[currentWater].z = ((k + 1) * 3.103) - (3.103 / 2);
-
-	// 				// Checking the distance between newly added water and the polymer chain
-	// 				for (int j = 0; j < lineCount; ++j)
-	// 				{
-	// 					solventDistance = sqrt (pow ((water[currentWater].x - traj[j].x), 2) + pow ((water[currentWater].y - traj[j].y), 2) + pow ((water[currentWater].z - traj[j].z), 2));
-
-	// 					if (solventDistance < 3.5)
-	// 						waterOverlap = 1;
-	// 					else
-	// 						waterOverlap = 0;
-	// 				}
-	// 				// Checking the distance between newly added water and butanediol molecules
-	// 				for (int j = 0; j < nButanediol; ++j)
-	// 				{
-	// 					if (butanediol[i].x > 0 || butanediol[i].y > 0 || butanediol[i].z > 0)
-	// 					{
-	// 						solventDistance = sqrt (pow ((water[currentWater].x - butanediol[j].x), 2) + pow ((water[currentWater].y - butanediol[j].y), 2) + pow ((water[currentWater].z - butanediol[j].z), 2));
-
-	// 						if (solventDistance < 9)
-	// 							waterOverlap = 1;
-	// 					}
-	// 				}
-
-	// 				// Indices are updated only if there is no overlap
-	// 				if (waterOverlap == 0)
-	// 				{
-	// 					currentWater++;
-	// 					nWater_remaining--;
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
-
-	// nWater = currentWater;
-	// nButanediol = currentButanediol;
-
-	// printf("Total number of water molecules added: %d\n", nWater);
-	// printf("Total number of butanediol molecules added: %d\n", nButanediol);
-
-	// Finding the center of mass
-	// for (int i = 0; i < nWater; ++i)
-	// {
-	// 	water_com.x += water[i].x; water_com.y += water[i].y; water_com.z += water[i].z;
-	// }
-
-	// for (int i = 0; i < nButanediol; ++i)
-	// {
-	// 	butanediol_com.x += butanediol[i].x; butanediol_com.y += butanediol[i].y; butanediol_com.z += butanediol[i].z;
-	// }
-
-	// water_com.x /= nWater; water_com.y /= nWater; water_com.z /= nWater; butanediol_com.x /= nButanediol; butanediol_com.y /= nButanediol; butanediol_com.z /= nButanediol;
-
-	// printf("Calculating center of mass for water molecules\n water_com.x: %f; water_com.y: %f; water_com.z: %f\n", water_com.x, water_com.y, water_com.z);
-	// printf("Calculating center of mass for butanediol molecules\n butanediol_com.x: %f; butanediol_com.y: %f; butanediol_com.z: %f\n", butanediol_com.x, butanediol_com.y, butanediol_com.z);
-
-	// Recenter solvent molecules
-	// for (int i = 0; i < nWater; ++i)
-	// {
-	// 	water[i].x -= water_com.x; water[i].y -= water_com.y; water[i].z -= water_com.z;
-	// }
-
-	// for (int i = 0; i < nButanediol; ++i)
-	// {
-	// 	butanediol[i].x -= butanediol_com.x; butanediol[i].y -= butanediol_com.y; butanediol[i].z -= butanediol_com.z;
-	// }
-
-	// Recalculating the center of mass for all solvent molecules
-	// water_com.x = 0; water_com.y = 0; water_com.z = 0;
-	// for (int i = 0; i < nWater; ++i)
-	// {
-	// 	water_com.x += water[i].x; water_com.y += water[i].y; water_com.z += water[i].z;
-	// }
-
-	// for (int i = 0; i < nButanediol; ++i)
-	// {
-	// 	butanediol_com.x += butanediol[i].x; butanediol_com.y += butanediol[i].y; butanediol_com.z += butanediol[i].z;
-	// }
-
-	// water_com.x /= nWater; water_com.y /= nWater; water_com.z /= nWater;
-	// butanediol_com.x /= nButanediol; butanediol_com.y /= nButanediol; butanediol_com.z /= nButanediol;
-
-	// printf("\nRecentering water molecules\n water_com.x: %f; water_com.y: %f; water_com.z: %f\n", water_com.x, water_com.y, water_com.z);
-	// printf("\nRecentering butanediol molecules\n butanediol_com.x: %f; butanediol_com.y: %f; butanediol_com.z: %f\n", butanediol_com.x, butanediol_com.y, butanediol_com.z);
-
-	// Create topology for water molecules
-	// int newNAtoms = datafile.nAtoms + (nWater * 3) + (nButanediol * 8), currentIDAtoms = datafile.nAtoms;
-	// atoms = (DATA_ATOMS *) realloc (atoms, newNAtoms * sizeof (DATA_ATOMS));
-
-	// int newNBonds = datafile.nBonds + (nWater * 2) + (nButanediol * 7), currentIDBonds = datafile.nBonds;
-	// bonds = (DATA_BONDS *) realloc (bonds, newNBonds * sizeof (DATA_BONDS));
-
-	// int newNAngles = datafile.nAngles + nWater + (nButanediol * 6), currentIDAngles = datafile.nAngles;
-	// angles = (DATA_ANGLES *) realloc (angles, newNAngles * sizeof (DATA_ANGLES));
-
-	// int newNDihedrals = datafile.nDihedrals + (nButanediol * 5), currentIDDihedrals = datafile.nDihedrals;
-	// dihedrals = (DATA_DIHEDRALS *) realloc (dihedrals, newNDihedrals * sizeof (DATA_DIHEDRALS));
-
-	// for (int i = 0; i < nWater; ++i)
-	// {
-	// 	// Adding oxygen molecule
-	// 	atoms[currentIDAtoms].id = atoms[currentIDAtoms-1].id + 1;
-	// 	atoms[currentIDAtoms].molType = 2;
-	// 	atoms[currentIDAtoms].atomType = 8;
-	// 	atoms[currentIDAtoms].charge = -0.83;
-	// 	atoms[currentIDAtoms].x = water[i].x;
-	// 	atoms[currentIDAtoms].y = water[i].y;
-	// 	atoms[currentIDAtoms].z = water[i].z;
-	// 	currentIDAtoms++;
-
-	// 	// Adding hydrogens
-	// 	// Hydrogen 1
-	// 	atoms[currentIDAtoms].id = atoms[currentIDAtoms-1].id + 1;
-	// 	atoms[currentIDAtoms].molType = 2;
-	// 	atoms[currentIDAtoms].atomType = 9;
-	// 	atoms[currentIDAtoms].charge = 0.415;
-	// 	atoms[currentIDAtoms].x = water[i].x - 0.32;
-	// 	atoms[currentIDAtoms].y = water[i].y + 0.13;
-	// 	atoms[currentIDAtoms].z = water[i].z - 0.91;
-	// 	currentIDAtoms++;
-
-	// 	// Hydrogen 2
-	// 	atoms[currentIDAtoms].id = atoms[currentIDAtoms-1].id + 1;
-	// 	atoms[currentIDAtoms].molType = 2;
-	// 	atoms[currentIDAtoms].atomType = 9;
-	// 	atoms[currentIDAtoms].charge = 0.415;
-	// 	atoms[currentIDAtoms].x = water[i].x + 0.97;
-	// 	atoms[currentIDAtoms].y = water[i].y;
-	// 	atoms[currentIDAtoms].z = water[i].z;
-	// 	currentIDAtoms++;
-
-	// 	// Adding bonds (bond1 and bond2 are identical)
-	// 	// Bond 1
-	// 	bonds[currentIDBonds].id = bonds[currentIDBonds-1].id + 1;
-	// 	bonds[currentIDBonds].bondType = 7;
-	// 	bonds[currentIDBonds].atom1 = atoms[currentIDAtoms-1].id;
-	// 	bonds[currentIDBonds].atom2 = atoms[currentIDAtoms-3].id;
-	// 	currentIDBonds++;
-
-	// 	// Bond 2
-	// 	bonds[currentIDBonds].id = bonds[currentIDBonds-1].id + 1;
-	// 	bonds[currentIDBonds].bondType = 7;
-	// 	bonds[currentIDBonds].atom1 = atoms[currentIDAtoms-2].id;
-	// 	bonds[currentIDBonds].atom2 = atoms[currentIDAtoms-3].id;
-	// 	currentIDBonds++;
-
-	// 	// Adding angles
-	// 	angles[currentIDAngles].id = angles[currentIDAngles-1].id + 1;
-	// 	angles[currentIDAngles].angleType = 10;
-	// 	angles[currentIDAngles].atom1 = atoms[currentIDAtoms-1].id;
-	// 	angles[currentIDAngles].atom2 = atoms[currentIDAtoms-3].id;
-	// 	angles[currentIDAngles].atom3 = atoms[currentIDAtoms-2].id;
-	// 	currentIDAngles++;
-	// }
-
-	// int H1id, O1id, C1id, C2id, C3id, C4id, O2id, H2id;
-
-	// for (int i = 0; i < nButanediol; ++i)
-	// {
-	// 	// Defined by TraPPE force field
-	// 	// Adding atomic coordinates
-	// 	// H
-	// 	atoms[currentIDAtoms].id = atoms[currentIDAtoms-1].id + 1;
-	// 	H1id = atoms[currentIDAtoms-1].id + 1;
-	// 	atoms[currentIDAtoms].molType = 3;
-	// 	atoms[currentIDAtoms].atomType = 10;
-	// 	atoms[currentIDAtoms].charge = 0.435;
-	// 	atoms[currentIDAtoms].x = butanediol[i].x - 2.18;
-	// 	atoms[currentIDAtoms].y = butanediol[i].y + 1.29;
-	// 	atoms[currentIDAtoms].z = butanediol[i].z - 1.26;
-	// 	currentIDAtoms++;
-
-	// 	// O
-	// 	atoms[currentIDAtoms].id = atoms[currentIDAtoms-1].id + 1;
-	// 	O1id = atoms[currentIDAtoms-1].id + 1;
-	// 	atoms[currentIDAtoms].molType = 3;
-	// 	atoms[currentIDAtoms].atomType = 11;
-	// 	atoms[currentIDAtoms].charge = -0.7;
-	// 	atoms[currentIDAtoms].x = butanediol[i].x - 1.93;
-	// 	atoms[currentIDAtoms].y = butanediol[i].y + 0.34;
-	// 	atoms[currentIDAtoms].z = butanediol[i].z - 1.36;
-	// 	currentIDAtoms++;
-
-	// 	// CH2
-	// 	atoms[currentIDAtoms].id = atoms[currentIDAtoms-1].id + 1;
-	// 	C1id = atoms[currentIDAtoms-1].id + 1;
-	// 	atoms[currentIDAtoms].molType = 3;
-	// 	atoms[currentIDAtoms].atomType = 12;
-	// 	atoms[currentIDAtoms].charge = 0.265;
-	// 	atoms[currentIDAtoms].x = butanediol[i].x - 0.53;
-	// 	atoms[currentIDAtoms].y = butanediol[i].y + 0.34;
-	// 	atoms[currentIDAtoms].z = butanediol[i].z - 1.37;
-	// 	currentIDAtoms++;
-
-	// 	// CH2
-	// 	atoms[currentIDAtoms].id = atoms[currentIDAtoms-1].id + 1;
-	// 	C2id = atoms[currentIDAtoms-1].id + 1;
-	// 	atoms[currentIDAtoms].molType = 3;
-	// 	atoms[currentIDAtoms].atomType = 12;
-	// 	atoms[currentIDAtoms].charge = 0.0;
-	// 	atoms[currentIDAtoms].x = butanediol[i].x;
-	// 	atoms[currentIDAtoms].y = butanediol[i].y;
-	// 	atoms[currentIDAtoms].z = butanediol[i].z;
-	// 	currentIDAtoms++;
-
-	// 	// CH2
-	// 	atoms[currentIDAtoms].id = atoms[currentIDAtoms-1].id + 1;
-	// 	C3id = atoms[currentIDAtoms-1].id + 1;
-	// 	atoms[currentIDAtoms].molType = 3;
-	// 	atoms[currentIDAtoms].atomType = 12;
-	// 	atoms[currentIDAtoms].charge = 0.0;
-	// 	atoms[currentIDAtoms].x = butanediol[i].x + 1.52;
-	// 	atoms[currentIDAtoms].y = butanediol[i].y;
-	// 	atoms[currentIDAtoms].z = butanediol[i].z;
-	// 	currentIDAtoms++;
-
-	// 	// CH2
-	// 	atoms[currentIDAtoms].id = atoms[currentIDAtoms-1].id + 1;
-	// 	C4id = atoms[currentIDAtoms-1].id + 1;
-	// 	atoms[currentIDAtoms].molType = 3;
-	// 	atoms[currentIDAtoms].atomType = 12;
-	// 	atoms[currentIDAtoms].charge = 0.265;
-	// 	atoms[currentIDAtoms].x = butanediol[i].x + 2.05;
-	// 	atoms[currentIDAtoms].y = butanediol[i].y - 1.25;
-	// 	atoms[currentIDAtoms].z = butanediol[i].z - 0.68;
-	// 	currentIDAtoms++;
-
-	// 	// O
-	// 	atoms[currentIDAtoms].id = atoms[currentIDAtoms-1].id + 1;
-	// 	O2id = atoms[currentIDAtoms-1].id + 1;
-	// 	atoms[currentIDAtoms].molType = 3;
-	// 	atoms[currentIDAtoms].atomType = 11;
-	// 	atoms[currentIDAtoms].charge = -0.7;
-	// 	atoms[currentIDAtoms].x = butanediol[i].x + 3.44;
-	// 	atoms[currentIDAtoms].y = butanediol[i].y - 1.23;
-	// 	atoms[currentIDAtoms].z = butanediol[i].z - 0.67;
-	// 	currentIDAtoms++;
-
-	// 	// H
-	// 	atoms[currentIDAtoms].id = atoms[currentIDAtoms-1].id + 1;
-	// 	H2id = atoms[currentIDAtoms-1].id + 1;
-	// 	atoms[currentIDAtoms].molType = 3;
-	// 	atoms[currentIDAtoms].atomType = 10;
-	// 	atoms[currentIDAtoms].charge = 0.435;
-	// 	atoms[currentIDAtoms].x = butanediol[i].x + 3.67;
-	// 	atoms[currentIDAtoms].y = butanediol[i].y - 1.80;
-	// 	atoms[currentIDAtoms].z = butanediol[i].z + 0.92;
-	// 	currentIDAtoms++;
-
-	// 	// Adding bonds
-	// 	// O---H bond
-	// 	bonds[currentIDBonds].id = bonds[currentIDBonds-1].id + 1;
-	// 	bonds[currentIDBonds].bondType = 8;
-	// 	bonds[currentIDBonds].atom1 = H1id;
-	// 	bonds[currentIDBonds].atom2 = O1id;
-	// 	currentIDBonds++;
-
-	// 	// O---C bond
-	// 	bonds[currentIDBonds].id = bonds[currentIDBonds-1].id + 1;
-	// 	bonds[currentIDBonds].bondType = 9;
-	// 	bonds[currentIDBonds].atom1 = O1id;
-	// 	bonds[currentIDBonds].atom2 = C1id;
-	// 	currentIDBonds++;
-
-	// 	// C---C bond
-	// 	bonds[currentIDBonds].id = bonds[currentIDBonds-1].id + 1;
-	// 	bonds[currentIDBonds].bondType = 10;
-	// 	bonds[currentIDBonds].atom1 = C1id;
-	// 	bonds[currentIDBonds].atom2 = C2id;
-	// 	currentIDBonds++;
-
-	// 	// C---C bond
-	// 	bonds[currentIDBonds].id = bonds[currentIDBonds-1].id + 1;
-	// 	bonds[currentIDBonds].bondType = 10;
-	// 	bonds[currentIDBonds].atom1 = C2id;
-	// 	bonds[currentIDBonds].atom2 = C3id;
-	// 	currentIDBonds++;
-
-	// 	// C---C bond
-	// 	bonds[currentIDBonds].id = bonds[currentIDBonds-1].id + 1;
-	// 	bonds[currentIDBonds].bondType = 10;
-	// 	bonds[currentIDBonds].atom1 = C3id;
-	// 	bonds[currentIDBonds].atom2 = C4id;
-	// 	currentIDBonds++;
-
-	// 	// C---O bond
-	// 	bonds[currentIDBonds].id = bonds[currentIDBonds-1].id + 1;
-	// 	bonds[currentIDBonds].bondType = 9;
-	// 	bonds[currentIDBonds].atom1 = C4id;
-	// 	bonds[currentIDBonds].atom2 = O2id;
-	// 	currentIDBonds++;
-
-	// 	// O---H bond
-	// 	bonds[currentIDBonds].id = bonds[currentIDBonds-1].id + 1;
-	// 	bonds[currentIDBonds].bondType = 8;
-	// 	bonds[currentIDBonds].atom1 = O2id;
-	// 	bonds[currentIDBonds].atom2 = H2id;
-	// 	currentIDBonds++;
-
-	// 	// Adding angles
-	// 	// H---O---C angle
-	// 	angles[currentIDAngles].id = angles[currentIDAngles-1].id + 1;
-	// 	angles[currentIDAngles].angleType = 11;
-	// 	angles[currentIDAngles].atom1 = H1id;
-	// 	angles[currentIDAngles].atom2 = O1id;
-	// 	angles[currentIDAngles].atom3 = C1id;
-	// 	currentIDAngles++;
-
-	// 	// O---C---C angle
-	// 	angles[currentIDAngles].id = angles[currentIDAngles-1].id + 1;
-	// 	angles[currentIDAngles].angleType = 12;
-	// 	angles[currentIDAngles].atom1 = O1id;
-	// 	angles[currentIDAngles].atom2 = C1id;
-	// 	angles[currentIDAngles].atom3 = C2id;
-	// 	currentIDAngles++;
-
-	// 	// C---C---C angle
-	// 	angles[currentIDAngles].id = angles[currentIDAngles-1].id + 1;
-	// 	angles[currentIDAngles].angleType = 13;
-	// 	angles[currentIDAngles].atom1 = C1id;
-	// 	angles[currentIDAngles].atom2 = C2id;
-	// 	angles[currentIDAngles].atom3 = C3id;
-	// 	currentIDAngles++;
-
-	// 	// C---C---C angle
-	// 	angles[currentIDAngles].id = angles[currentIDAngles-1].id + 1;
-	// 	angles[currentIDAngles].angleType = 13;
-	// 	angles[currentIDAngles].atom1 = C2id;
-	// 	angles[currentIDAngles].atom2 = C3id;
-	// 	angles[currentIDAngles].atom3 = C4id;
-	// 	currentIDAngles++;
-
-	// 	// C---C---O angle
-	// 	angles[currentIDAngles].id = angles[currentIDAngles-1].id + 1;
-	// 	angles[currentIDAngles].angleType = 12;
-	// 	angles[currentIDAngles].atom1 = C3id;
-	// 	angles[currentIDAngles].atom2 = C4id;
-	// 	angles[currentIDAngles].atom3 = O2id;
-	// 	currentIDAngles++;
-
-	// 	// C---O---H angle
-	// 	angles[currentIDAngles].id = angles[currentIDAngles-1].id + 1;
-	// 	angles[currentIDAngles].angleType = 11;
-	// 	angles[currentIDAngles].atom1 = C4id;
-	// 	angles[currentIDAngles].atom2 = O2id;
-	// 	angles[currentIDAngles].atom3 = H2id;
-	// 	currentIDAngles++;
-
-	// 	// Adding dihedrals
-	// 	// H---O---C---C dihedral
-	// 	dihedrals[currentIDDihedrals].id = dihedrals[currentIDDihedrals-1].id + 1;
-	// 	dihedrals[currentIDDihedrals].dihedralType = 10;
-	// 	dihedrals[currentIDDihedrals].atom1 = H1id;
-	// 	dihedrals[currentIDDihedrals].atom2 = O1id;
-	// 	dihedrals[currentIDDihedrals].atom3 = C1id;
-	// 	dihedrals[currentIDDihedrals].atom4 = C2id;
-	// 	currentIDDihedrals++;
-
-	// 	// O---C---C---C dihedral
-	// 	dihedrals[currentIDDihedrals].id = dihedrals[currentIDDihedrals-1].id + 1;
-	// 	dihedrals[currentIDDihedrals].dihedralType = 11;
-	// 	dihedrals[currentIDDihedrals].atom1 = O1id;
-	// 	dihedrals[currentIDDihedrals].atom2 = C1id;
-	// 	dihedrals[currentIDDihedrals].atom3 = C2id;
-	// 	dihedrals[currentIDDihedrals].atom4 = C3id;
-	// 	currentIDDihedrals++;
-
-	// 	// C---C---C---C dihedral
-	// 	dihedrals[currentIDDihedrals].id = dihedrals[currentIDDihedrals-1].id + 1;
-	// 	dihedrals[currentIDDihedrals].dihedralType = 12;
-	// 	dihedrals[currentIDDihedrals].atom1 = C1id;
-	// 	dihedrals[currentIDDihedrals].atom2 = C2id;
-	// 	dihedrals[currentIDDihedrals].atom3 = C3id;
-	// 	dihedrals[currentIDDihedrals].atom4 = C4id;
-	// 	currentIDDihedrals++;
-
-	// 	// C---C---C---O dihedral
-	// 	dihedrals[currentIDDihedrals].id = dihedrals[currentIDDihedrals-1].id + 1;
-	// 	dihedrals[currentIDDihedrals].dihedralType = 11;
-	// 	dihedrals[currentIDDihedrals].atom1 = C2id;
-	// 	dihedrals[currentIDDihedrals].atom2 = C3id;
-	// 	dihedrals[currentIDDihedrals].atom3 = C4id;
-	// 	dihedrals[currentIDDihedrals].atom4 = O2id;
-	// 	currentIDDihedrals++;
-
-	// 	// C---C---O---H dihedral
-	// 	dihedrals[currentIDDihedrals].id = dihedrals[currentIDDihedrals-1].id + 1;
-	// 	dihedrals[currentIDDihedrals].dihedralType = 10;
-	// 	dihedrals[currentIDDihedrals].atom1 = C3id;
-	// 	dihedrals[currentIDDihedrals].atom2 = C4id;
-	// 	dihedrals[currentIDDihedrals].atom3 = O2id;
-	// 	dihedrals[currentIDDihedrals].atom4 = H2id;
-	// 	currentIDDihedrals++;
-	// }
-
-	// Recalculting the number of atom, bond, angle, dihedral and improper types
-	// for (int i = 0; i < newNAtoms; ++i)
-	// {
-	// 	if (atoms[i].atomType > datafile.nAtomTypes)
-	// 		datafile.nAtomTypes = atoms[i].atomType;
-	// }
-
-	// for (int i = 0; i < newNBonds; ++i)
-	// {
-	// 	if (bonds[i].bondType > datafile.nBondTypes)
-	// 		datafile.nBondTypes = bonds[i].bondType;
-	// }
-
-	// for (int i = 0; i < newNAngles; ++i)
-	// {
-	// 	if (angles[i].angleType > datafile.nAngleTypes)
-	// 		datafile.nAngleTypes = angles[i].angleType;
-	// }
-
-	// for (int i = 0; i < newNDihedrals; ++i)
-	// {
-	// 	if (dihedrals[i].dihedralType > datafile.nDihedralTypes)
-	// 		datafile.nDihedralTypes = dihedrals[i].dihedralType;
-	// }
-
-	// for (int i = 0; i < datafile.nImpropers; ++i)
-	// {
-	// 	if (impropers[i].improperType > datafile.nImproperTypes)
-	// 		datafile.nImproperTypes = impropers[i].improperType;
-	// }
-
-	// printf("\nRecalculated values for\n\n Atom types: %d\n Bond types: %d\n Angle types: %d\n Dihedral types: %d\n Improper types: %d\n", datafile.nAtomTypes, datafile.nBondTypes, datafile.nAngleTypes, datafile.nDihedralTypes, datafile.nImproperTypes);
-
-	// Print the final data file
-	// fprintf(output, "Created by you v1.8.1 on today, this month, this year, current time.\n\n%d atoms\n%d bonds\n%d angles\n%d dihedrals\n%d impropers\n\n%d atom types\n%d bond types\n%d angle types\n%d dihedral types\n%d improper types\n\n%.0f %.0f xlo xhi\n%.0f %.0f ylo yhi\n%.0f %.0f zlo zhi\n\nMasses\n\n1 1.008    # H of NaPSS\n2 12.011   # C of NaPSS\n3 13.018   # CH of NaPSS\n4 14.026   # CH2 of NaPSS\n5 32.065   # S of NaPSS\n6 15.999   # O of NaPSS\n7 22.989   # Na of NaPSS\n8 15.999   # O of H2O\n9 1.008    # H of H2O\n10 1.008   # H of butanediol\n11 15.999  # O of butanediol\n12 14.1707 # CH2_1 of butanediol\n\nAtoms\n\n", newNAtoms, newNBonds, newNAngles, newNDihedrals, datafile.nImpropers, datafile.nAtomTypes, datafile.nBondTypes, datafile.nAngleTypes, datafile.nDihedralTypes, datafile.nImproperTypes, dimLow.x - 1, dimHigh.x + 1, dimLow.y - 1, dimHigh.y + 1, dimLow.z - 1, dimHigh.z + 1);
-
-	// 1 1.008    # H
-	// 2 12.011   # C
-	// 3 13.018   # CH
-	// 4 14.026   # CH2
-	// 5 32.065   # S
-	// 6 15.999   # O
-	// 7 22.989   # Na
-	// 8 15.999   # O from H2O
-	// 9 1.008    # H from H2O
-	// 10 1.008   # H from butanediol
-	// 11 15.999  # O from butanediol
-	// 12 14.1707 # CH2_1 from butanediol
-	// 13 14.1707 # CH2_2 from butanediol
-
-	// fprintf(outputXYZ, "%d\n", newNAtoms);
-	// fprintf(outputXYZ, "%s\n", "#This XYZ file can be loaded after psf file for visualization.");
-	// for (int i = 0; i < newNAtoms; ++i)
-	// {
-	// 	fprintf(output, "%d %d %d %.4f %.4f %.4f %.4f\n", atoms[i].id, atoms[i].molType, atoms[i].atomType, atoms[i].charge, atoms[i].x, atoms[i].y, atoms[i].z);
-	// 	fprintf(outputXYZ, "C %.4f %.4f %.4f\n", atoms[i].x, atoms[i].y, atoms[i].z);
-	// }
-
-	// fprintf(output, "\nBonds\n\n");
-
-	// for (int i = 0; i < newNBonds; ++i)
-	// 	fprintf(output, "%d %d %d %d\n", bonds[i].id, bonds[i].bondType, bonds[i].atom1, bonds[i].atom2);
-
-	// fprintf(output, "\nAngles\n\n");
-
-	// for (int i = 0; i < newNAngles; ++i)
-	// 	fprintf(output, "%d %d %d %d %d\n", angles[i].id, angles[i].angleType, angles[i].atom1, angles[i].atom2, angles[i].atom3);
-
-	// fprintf(output, "\nDihedrals\n\n");
-
-	// for (int i = 0; i < newNDihedrals; ++i)
-	// 	fprintf(output, "%d %d %d %d %d %d\n", dihedrals[i].id, dihedrals[i].dihedralType, dihedrals[i].atom1, dihedrals[i].atom2, dihedrals[i].atom3, dihedrals[i].atom4);
-
-	// fprintf(output, "\nImpropers\n\n");
-
-	// for (int i = 0; i < datafile.nImpropers; ++i)
-	// 	fprintf(output, "%d %d %d %d %d %d\n", impropers[i].id, impropers[i].improperType, impropers[i].atom1, impropers[i].atom2, impropers[i].atom3, impropers[i].atom4);
 
 	fclose (input);
 	fclose (output);
