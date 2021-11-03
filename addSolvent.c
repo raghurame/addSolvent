@@ -11,7 +11,7 @@
  *
  * argv[0] = program
  * argv[1] = input dump file name
- * argv[2] = number of water molecules (these molecules will be added randomly)
+ * argv[2] = input data file name
  *
  */
 
@@ -635,7 +635,7 @@ int findNButanediol (float butanediolFraction, BOUNDS simBoxDimension)
 	float xLength = fabs (simBoxDimension.xhi) + fabs (simBoxDimension.xlo), yLength = fabs (simBoxDimension.yhi) + fabs (simBoxDimension.ylo), zLength = fabs (simBoxDimension.zhi) + fabs (simBoxDimension.zlo), avogadroNumber = 6.023, butanediolDensity = 1.02, molarMass = 90.12;
 	float nButanediol_max = (butanediolDensity * xLength * yLength * zLength * avogadroNumber * 0.1 / molarMass);
 	int nButanediol = (int) (nButanediol_max * butanediolFraction);
-	printf("%d molecules of butanediol will be added... (nButanediol_max: %.0f)\n", nButanediol, nButanediol_max);
+	printf("Attempting to add %d molecules of butanediol... (nButanediol_max: %.0f)\n", nButanediol, nButanediol_max);
 
 	return nButanediol;
 }
@@ -646,7 +646,7 @@ int findNWater (float waterFraction, BOUNDS simBoxDimension)
 	float xLength = fabs (simBoxDimension.xhi) + fabs (simBoxDimension.xlo), yLength = fabs (simBoxDimension.yhi) + fabs (simBoxDimension.ylo), zLength = fabs (simBoxDimension.zhi) + fabs (simBoxDimension.zlo), avogadroNumber = 6.023, waterDensity = 1.0, molarMass = 18;
 	float nWater_max = (waterDensity * xLength * yLength * zLength * avogadroNumber * 0.1 / molarMass);
 	int nWater = (int) (nWater_max * waterFraction);
-	printf("%d molecules of water will be added... (nWater_max: %.0f)\n", nWater, nWater_max);
+	printf("Attempting to add %d molecules of water... (nWater_max: %.0f)\n", nWater, nWater_max);
 
 	return nWater;
 }
@@ -659,16 +659,22 @@ DATA_ATOMS *populateButanediol (BOUNDS simBoxDimension, int nButanediol)
 	DATA_ATOMS *butanediol;
 	butanediol = (DATA_ATOMS *) calloc (nButanediol, sizeof (DATA_ATOMS));
 
-	float nBins_x = cbrt (nButanediol), nBins_y = cbrt (nButanediol), nBins_z =cbrt (nButanediol);
+	float nBins_x = cbrt (nButanediol), nBins_y = cbrt (nButanediol), nBins_z = cbrt (nButanediol);
+	int nBins_x_int = floor (nBins_x), nBins_y_int = floor (nBins_y), nBins_z_int = floor (nBins_z);
 	float xDistSeparation = (fabs (simBoxDimension.xhi) + fabs (simBoxDimension.xlo)) / nBins_x, yDistSeparation = (fabs (simBoxDimension.yhi) + fabs (simBoxDimension.ylo)) / nBins_y, zDistSeparation = (fabs (simBoxDimension.zhi) + fabs (simBoxDimension.zlo)) / nBins_z;
 	int currentButanediol = 0;
 
+	// printf("nBins_x: %f; nBins_y: %f; nBins_z: %f\n", nBins_x, nBins_y, nBins_z);
+	// printf("nBins_x: %d; nBins_y: %d; nBins_z: %d\n", nBins_x_int, nBins_y_int, nBins_z_int);
+	// printf("nBins_x * nBins_y * nBins_z = %f\n", nBins_x * nBins_y * nBins_z);
+	// printf("nBins_x * nBins_y * nBins_z = %d\n", nBins_x_int * nBins_y_int * nBins_z_int);
+
 	// Distribute the butanediol molecules evenly
-	for (int i = 0; i < nBins_x; ++i)
+	for (int i = 0; i < nBins_x_int; ++i)
 	{
-		for (int j = 0; j < nBins_y; ++j)
+		for (int j = 0; j < nBins_y_int; ++j)
 		{
-			for (int k = 0; k < nBins_z; ++k)
+			for (int k = 0; k < nBins_z_int; ++k)
 			{
 				butanediol[currentButanediol].x = simBoxDimension.xlo + ((i + 1) * xDistSeparation) - (xDistSeparation / 2);
 				butanediol[currentButanediol].y = simBoxDimension.ylo + ((j + 1) * yDistSeparation) - (yDistSeparation / 2);
@@ -677,6 +683,8 @@ DATA_ATOMS *populateButanediol (BOUNDS simBoxDimension, int nButanediol)
 			}
 		}
 	}
+
+	printf("Butanediol added: %d\n", currentButanediol);
 
 	return butanediol;
 }
@@ -690,15 +698,21 @@ DATA_ATOMS *populateWater (BOUNDS simBoxDimension, int nWater)
 	water = (DATA_ATOMS *) calloc (nWater, sizeof (DATA_ATOMS));
 
 	float nBins_x = cbrt (nWater), nBins_y = cbrt (nWater), nBins_z = cbrt (nWater);
+	int nBins_x_int = (int) floor (nBins_x), nBins_y_int = (int) floor (nBins_y), nBins_z_int = (int) floor (nBins_z);
 	float xDistSeparation = (fabs (simBoxDimension.xhi) + fabs (simBoxDimension.xlo)) / nBins_x, yDistSeparation = ( fabs(simBoxDimension.yhi) + fabs (simBoxDimension.ylo)) / nBins_y, zDistSeparation = (fabs (simBoxDimension.zhi) + fabs (simBoxDimension.zlo)) / nBins_z;
 	int currentWater = 0;
 
+	// printf("nBins_x: %f; nBins_y: %f; nBins_z: %f\n", nBins_x, nBins_y, nBins_z);
+	// printf("nBins_x: %f; nBins_y: %f; nBins_z: %f\n", nBins_x_int, nBins_y_int, nBins_z_int);
+	// printf("nBins_x * nBins_y * nBins_z = %f\n", nBins_x * nBins_y * nBins_z);
+	// printf("nBins_x * nBins_y * nBins_z = %f\n", nBins_x_int * nBins_y_int * nBins_z_int);
+
 	// Distributing water molecules evenly
-	for (int i = 0; i < nBins_x; ++i)
+	for (int i = 0; i < nBins_x_int; ++i)
 	{
-		for (int j = 0; j < nBins_y; ++j)
+		for (int j = 0; j < nBins_y_int; ++j)
 		{
-			for (int k = 0; k < nBins_z; ++k)
+			for (int k = 0; k < nBins_z_int; ++k)
 			{
 				water[currentWater].x = simBoxDimension.xlo + ((i + 1) * xDistSeparation) - (xDistSeparation / 2);
 				water[currentWater].y = simBoxDimension.ylo + ((j + 1) * yDistSeparation) - (yDistSeparation / 2);
@@ -707,6 +721,8 @@ DATA_ATOMS *populateWater (BOUNDS simBoxDimension, int nWater)
 			}
 		}
 	}
+
+	printf("Water added: %d\n", currentWater);
 
 	return water;
 }
@@ -1153,20 +1169,25 @@ int main(int argc, char const *argv[])
 
 	if (argc == 1)
 	{
-		printf("\nERROR: Insufficient arguments passed.\n\n   ARGS TO PASS:\n   ~~~~~~~~~~~~~\n\n * argv[0] = program\n * argv[1] = input dump file name\n * argv[2] = input data file\n\n");
+		printf("\nERROR: Insufficient arguments passed.\n\n   ARGS TO PASS:\n   ~~~~~~~~~~~~~\n\n * argv[0] = program\n * argv[1] = input dump file name\n * argv[2] = input data file\n * argv[3] = output file name (*.data and *.xyz will be saved)\n\n");
 		exit (1);
 	}
 	int nAtoms = getNatoms (argv[1]), lineCount = 0;
 
-	char *pipeString, lineString[1000];
+	char *pipeString, lineString[1000], *outputDatafile, *outputXYZfile;
 	pipeString = (char *) malloc (500 * sizeof (char));
+	outputDatafile = (char *) malloc (500 * sizeof (char));
+	outputXYZfile = (char *) malloc (500 * sizeof (char));
+
 	sprintf (pipeString, "tail -%d %s", nAtoms, argv[1]);
+	sprintf (outputXYZfile, "%s.xyz", argv[3]);
+	sprintf (outputDatafile, "%s.data", argv[3]);
 
 	FILE *input, *output, *input2, *outputXYZ;
 	input = popen (pipeString, "r");
 	input2 = fopen (argv[1], "r");
-	output = fopen ("solvated.data", "w");
-	outputXYZ = fopen ("solvated.xyz", "w");
+	output = fopen (outputDatafile, "w");
+	outputXYZ = fopen (outputXYZfile, "w");
 
 	DUMP *traj, com, dimLow, dimHigh, boxLength, dumpLow, dumpHigh, chainDimension;
 	BOUNDS dumpDimension, simBoxDimension;
