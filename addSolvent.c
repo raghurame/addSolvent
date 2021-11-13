@@ -664,11 +664,6 @@ DATA_ATOMS *populateButanediol (BOUNDS simBoxDimension, int nButanediol)
 	float xDistSeparation = (fabs (simBoxDimension.xhi) + fabs (simBoxDimension.xlo)) / nBins_x, yDistSeparation = (fabs (simBoxDimension.yhi) + fabs (simBoxDimension.ylo)) / nBins_y, zDistSeparation = (fabs (simBoxDimension.zhi) + fabs (simBoxDimension.zlo)) / nBins_z;
 	int currentButanediol = 0;
 
-	// printf("nBins_x: %f; nBins_y: %f; nBins_z: %f\n", nBins_x, nBins_y, nBins_z);
-	// printf("nBins_x: %d; nBins_y: %d; nBins_z: %d\n", nBins_x_int, nBins_y_int, nBins_z_int);
-	// printf("nBins_x * nBins_y * nBins_z = %f\n", nBins_x * nBins_y * nBins_z);
-	// printf("nBins_x * nBins_y * nBins_z = %d\n", nBins_x_int * nBins_y_int * nBins_z_int);
-
 	// Distribute the butanediol molecules evenly
 	for (int i = 0; i < nBins_x_int; ++i)
 	{
@@ -702,11 +697,6 @@ DATA_ATOMS *populateWater (BOUNDS simBoxDimension, int nWater)
 	float xDistSeparation = (fabs (simBoxDimension.xhi) + fabs (simBoxDimension.xlo)) / nBins_x, yDistSeparation = ( fabs(simBoxDimension.yhi) + fabs (simBoxDimension.ylo)) / nBins_y, zDistSeparation = (fabs (simBoxDimension.zhi) + fabs (simBoxDimension.zlo)) / nBins_z;
 	int currentWater = 0;
 
-	// printf("nBins_x: %f; nBins_y: %f; nBins_z: %f\n", nBins_x, nBins_y, nBins_z);
-	// printf("nBins_x: %f; nBins_y: %f; nBins_z: %f\n", nBins_x_int, nBins_y_int, nBins_z_int);
-	// printf("nBins_x * nBins_y * nBins_z = %f\n", nBins_x * nBins_y * nBins_z);
-	// printf("nBins_x * nBins_y * nBins_z = %f\n", nBins_x_int * nBins_y_int * nBins_z_int);
-
 	// Distributing water molecules evenly
 	for (int i = 0; i < nBins_x_int; ++i)
 	{
@@ -727,7 +717,7 @@ DATA_ATOMS *populateWater (BOUNDS simBoxDimension, int nWater)
 	return water;
 }
 
-void createWaterTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **angles, int nWater, DATA_ATOMS *water, DATAFILE_INFO *datafile_raw, DATAFILE_INFO *datafile)
+void createWaterTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **angles, int nWater, DATA_ATOMS *water, DATAFILE_INFO *datafile_raw, DATAFILE_INFO *datafile, int waterMolType)
 {
 	int currentIDAtoms = (*datafile_raw).nAtoms, currentIDBonds = (*datafile_raw).nBonds, currentIDAngles = (*datafile_raw).nAngles;
 	int O_ID, H1_ID, H2_ID;
@@ -737,7 +727,7 @@ void createWaterTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **
 		// Adding oxygen molecule
 		(*atoms)[currentIDAtoms].id = (*atoms)[currentIDAtoms-1].id + 1;
 		O_ID = (*atoms)[currentIDAtoms-1].id + 1;
-		(*atoms)[currentIDAtoms].molType = 2;
+		(*atoms)[currentIDAtoms].molType = waterMolType;
 		(*atoms)[currentIDAtoms].atomType = (*datafile).nAtomTypes + 1;
 		(*atoms)[currentIDAtoms].charge = -0.83;
 		(*atoms)[currentIDAtoms].x = water[i].x;
@@ -749,7 +739,7 @@ void createWaterTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **
 		// Hydrogen 1
 		(*atoms)[currentIDAtoms].id = (*atoms)[currentIDAtoms-1].id + 1;
 		H1_ID = (*atoms)[currentIDAtoms-1].id + 1;
-		(*atoms)[currentIDAtoms].molType = 2;
+		(*atoms)[currentIDAtoms].molType = waterMolType;
 		(*atoms)[currentIDAtoms].atomType = (*datafile).nAtomTypes + 2;
 		(*atoms)[currentIDAtoms].charge = 0.415;
 		(*atoms)[currentIDAtoms].x = water[i].x - 0.32;
@@ -760,7 +750,7 @@ void createWaterTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **
 		// Hydrogen 2
 		(*atoms)[currentIDAtoms].id = (*atoms)[currentIDAtoms-1].id + 1;
 		H2_ID = (*atoms)[currentIDAtoms-1].id + 1;
-		(*atoms)[currentIDAtoms].molType = 2;
+		(*atoms)[currentIDAtoms].molType = waterMolType;
 		(*atoms)[currentIDAtoms].atomType = (*datafile).nAtomTypes + 2;
 		(*atoms)[currentIDAtoms].charge = 0.415;
 		(*atoms)[currentIDAtoms].x = water[i].x + 0.97;
@@ -792,16 +782,18 @@ void createWaterTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **
 		currentIDAngles++;
 	}
 
-	(*datafile).nAtomTypes += 2;
-	(*datafile).nBondTypes += 1;
-	(*datafile).nAngleTypes += 1;
-
-	(*datafile_raw).nAtoms = currentIDAtoms;
-	(*datafile_raw).nBonds = currentIDBonds;
-	(*datafile_raw).nAngles = currentIDAngles;
+	if (nWater > 0)
+	{
+		(*datafile).nAtomTypes += 2;
+		(*datafile).nBondTypes += 1;
+		(*datafile).nAngleTypes += 1;
+		(*datafile_raw).nAtoms = currentIDAtoms;
+		(*datafile_raw).nBonds = currentIDBonds;
+		(*datafile_raw).nAngles = currentIDAngles;
+	}
 }
 
-void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **angles, DATA_DIHEDRALS **dihedrals, int nButanediol, DATA_ATOMS *butanediol, DATAFILE_INFO *datafile_raw, DATAFILE_INFO *datafile)
+void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **angles, DATA_DIHEDRALS **dihedrals, int nButanediol, DATA_ATOMS *butanediol, DATAFILE_INFO *datafile_raw, DATAFILE_INFO *datafile, int butanediolMolType)
 {
 	int currentIDAtoms = (*datafile_raw).nAtoms, currentIDBonds = (*datafile_raw).nBonds, currentIDAngles = (*datafile_raw).nAngles, currentIDDihedrals = (*datafile_raw).nDihedrals;
 
@@ -814,7 +806,7 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 		// H
 		(*atoms)[currentIDAtoms].id = (*atoms)[currentIDAtoms-1].id + 1;
 		H1_ID = (*atoms)[currentIDAtoms-1].id + 1;
-		(*atoms)[currentIDAtoms].molType = 3;
+		(*atoms)[currentIDAtoms].molType = butanediolMolType;
 		(*atoms)[currentIDAtoms].atomType = (*datafile).nAtomTypes + 1;
 		(*atoms)[currentIDAtoms].charge = 0.435;
 		(*atoms)[currentIDAtoms].x = butanediol[i].x - 2.18;
@@ -825,7 +817,7 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 		// O
 		(*atoms)[currentIDAtoms].id = (*atoms)[currentIDAtoms-1].id + 1;
 		O1_ID = (*atoms)[currentIDAtoms-1].id + 1;
-		(*atoms)[currentIDAtoms].molType = 3;
+		(*atoms)[currentIDAtoms].molType = butanediolMolType;
 		(*atoms)[currentIDAtoms].atomType = (*datafile).nAtomTypes + 2;
 		(*atoms)[currentIDAtoms].charge = -0.7;
 		(*atoms)[currentIDAtoms].x = butanediol[i].x - 1.93;
@@ -836,7 +828,7 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 		// CH2
 		(*atoms)[currentIDAtoms].id = (*atoms)[currentIDAtoms-1].id + 1;
 		C1_ID = (*atoms)[currentIDAtoms-1].id + 1;
-		(*atoms)[currentIDAtoms].molType = 3;
+		(*atoms)[currentIDAtoms].molType = butanediolMolType;
 		(*atoms)[currentIDAtoms].atomType = (*datafile).nAtomTypes + 3;
 		(*atoms)[currentIDAtoms].charge = 0.265;
 		(*atoms)[currentIDAtoms].x = butanediol[i].x - 0.53;
@@ -847,7 +839,7 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 		// CH2
 		(*atoms)[currentIDAtoms].id = (*atoms)[currentIDAtoms-1].id + 1;
 		C2_ID = (*atoms)[currentIDAtoms-1].id + 1;
-		(*atoms)[currentIDAtoms].molType = 3;
+		(*atoms)[currentIDAtoms].molType = butanediolMolType;
 		(*atoms)[currentIDAtoms].atomType = (*datafile).nAtomTypes + 3;
 		(*atoms)[currentIDAtoms].charge = 0.0;
 		(*atoms)[currentIDAtoms].x = butanediol[i].x;
@@ -858,7 +850,7 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 		// CH2
 		(*atoms)[currentIDAtoms].id = (*atoms)[currentIDAtoms-1].id + 1;
 		C3_ID = (*atoms)[currentIDAtoms-1].id + 1;
-		(*atoms)[currentIDAtoms].molType = 3;
+		(*atoms)[currentIDAtoms].molType = butanediolMolType;
 		(*atoms)[currentIDAtoms].atomType = (*datafile).nAtomTypes + 3;
 		(*atoms)[currentIDAtoms].charge = 0.0;
 		(*atoms)[currentIDAtoms].x = butanediol[i].x + 1.52;
@@ -869,7 +861,7 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 		// CH2
 		(*atoms)[currentIDAtoms].id = (*atoms)[currentIDAtoms-1].id + 1;
 		C4_ID = (*atoms)[currentIDAtoms-1].id + 1;
-		(*atoms)[currentIDAtoms].molType = 3;
+		(*atoms)[currentIDAtoms].molType = butanediolMolType;
 		(*atoms)[currentIDAtoms].atomType = (*datafile).nAtomTypes + 3;
 		(*atoms)[currentIDAtoms].charge = 0.265;
 		(*atoms)[currentIDAtoms].x = butanediol[i].x + 2.05;
@@ -880,7 +872,7 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 		// O
 		(*atoms)[currentIDAtoms].id = (*atoms)[currentIDAtoms-1].id + 1;
 		O2_ID = (*atoms)[currentIDAtoms-1].id + 1;
-		(*atoms)[currentIDAtoms].molType = 3;
+		(*atoms)[currentIDAtoms].molType = butanediolMolType;
 		(*atoms)[currentIDAtoms].atomType = (*datafile).nAtomTypes + 2;
 		(*atoms)[currentIDAtoms].charge = -0.7;
 		(*atoms)[currentIDAtoms].x = butanediol[i].x + 3.44;
@@ -891,7 +883,7 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 		// H
 		(*atoms)[currentIDAtoms].id = (*atoms)[currentIDAtoms-1].id + 1;
 		H2_ID = (*atoms)[currentIDAtoms-1].id + 1;
-		(*atoms)[currentIDAtoms].molType = 3;
+		(*atoms)[currentIDAtoms].molType = butanediolMolType;
 		(*atoms)[currentIDAtoms].atomType = (*datafile).nAtomTypes + 1;
 		(*atoms)[currentIDAtoms].charge = 0.435;
 		(*atoms)[currentIDAtoms].x = butanediol[i].x + 3.67;
@@ -1045,15 +1037,17 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 		currentIDDihedrals++;
 	}
 
-	(*datafile).nAtomTypes += 3;
-	(*datafile).nBondTypes += 3;
-	(*datafile).nAngleTypes += 3;
-	(*datafile).nDihedralTypes += 3;
-
-	(*datafile_raw).nAtoms = currentIDAtoms;
-	(*datafile_raw).nBonds = currentIDBonds;
-	(*datafile_raw).nAngles = currentIDAngles;
-	(*datafile_raw).nDihedrals = currentIDDihedrals;
+	if (nButanediol > 0)
+	{
+		(*datafile).nAtomTypes += 3;
+		(*datafile).nBondTypes += 3;
+		(*datafile).nAngleTypes += 3;
+		(*datafile).nDihedralTypes += 3;
+		(*datafile_raw).nAtoms = currentIDAtoms;
+		(*datafile_raw).nBonds = currentIDBonds;
+		(*datafile_raw).nAngles = currentIDAngles;
+		(*datafile_raw).nDihedrals = currentIDDihedrals;		
+	}
 }
 
 void recalculateNAtoms (DATA_ATOMS *atoms, DATAFILE_INFO *datafile)
@@ -1092,9 +1086,35 @@ void recalculateNDihedrals (DATA_DIHEDRALS *dihedrals, DATAFILE_INFO *datafile)
 	}
 }
 
+BOUNDS recalculateSimBoxDimension (DATA_ATOMS *atoms, DATAFILE_INFO datafile)
+{
+	BOUNDS simBoxDimension;
+	simBoxDimension.xlo = 0; simBoxDimension.xhi = 0; simBoxDimension.ylo = 0; simBoxDimension.yhi = 0; simBoxDimension.zlo = 0; simBoxDimension.zhi = 0;
+
+	for (int i = 0; i < datafile.nAtoms; ++i)
+	{
+		if (atoms[i].x < simBoxDimension.xlo)
+			simBoxDimension.xlo = atoms[i].x;
+		if (atoms[i].x > simBoxDimension.xhi)
+			simBoxDimension.xhi = atoms[i].x;
+		if (atoms[i].y < simBoxDimension.ylo)
+			simBoxDimension.ylo = atoms[i].y;
+		if (atoms[i].y > simBoxDimension.yhi)
+			simBoxDimension.yhi = atoms[i].y;
+		if (atoms[i].z < simBoxDimension.zlo)
+			simBoxDimension.zlo = atoms[i].z;
+		if (atoms[i].z > simBoxDimension.zhi)
+			simBoxDimension.zhi = atoms[i].z;
+	}
+
+	printf("Recalculated simulation box dimensions:\n\n xlo xhi %.2f %.2f\n ylo yhi %.2f %.2f\n zlo zhi %.2f %.2f\n\n", simBoxDimension.xlo, simBoxDimension.xhi, simBoxDimension.ylo, simBoxDimension.yhi, simBoxDimension.zlo, simBoxDimension.zhi);
+
+	return simBoxDimension;
+}
+
 void print_datafileHeader (FILE *output, BOUNDS simBoxDimension, DATAFILE_INFO datafile)
 {
-	fprintf(output, "Created by you v1.8.1 on today, this month, this year, current time.\n\n%d atoms\n%d bonds\n%d angles\n%d dihedrals\n%d impropers\n\n%d atom types\n%d bond types\n%d angle types\n%d dihedral types\n%d improper types\n\n%.0f %.0f xlo xhi\n%.0f %.0f ylo yhi\n%.0f %.0f zlo zhi\n\nMasses\n\n1 1.008    # H of NaPSS\n2 12.011   # C of NaPSS\n3 13.018   # CH of NaPSS\n4 14.026   # CH2 of NaPSS\n5 32.065   # S of NaPSS\n6 15.999   # O of NaPSS\n7 22.989   # Na of NaPSS\n8 15.999   # O of H2O\n9 1.008    # H of H2O\n10 1.008   # H of butanediol\n11 15.999  # O of butanediol\n12 14.1707 # CH2_1 of butanediol\n\nAtoms\n\n", datafile.nAtoms, datafile.nBonds, datafile.nAngles, datafile.nDihedrals, datafile.nImpropers, datafile.nAtomTypes, datafile.nBondTypes, datafile.nAngleTypes, datafile.nDihedralTypes, datafile.nImproperTypes, simBoxDimension.xlo, simBoxDimension.xhi, simBoxDimension.ylo, simBoxDimension.yhi, simBoxDimension.zlo, simBoxDimension.zhi);
+	fprintf(output, "Created by you v1.8.1 on today, this month, this year, current time.\n\n%d atoms\n%d bonds\n%d angles\n%d dihedrals\n%d impropers\n\n%d atom types\n%d bond types\n%d angle types\n%d dihedral types\n%d improper types\n\n%.2f %.2f xlo xhi\n%.2f %.2f ylo yhi\n%.2f %.2f zlo zhi\n\nMasses\n\n1 1.008    # H of NaPSS\n2 12.011   # C of NaPSS\n3 13.018   # CH of NaPSS\n4 14.026   # CH2 of NaPSS\n5 32.065   # S of NaPSS\n6 15.999   # O of NaPSS\n7 22.989   # Na of NaPSS\n8 15.999   # O of H2O\n9 1.008    # H of H2O\n10 1.008   # H of butanediol\n11 15.999  # O of butanediol\n12 14.1707 # CH2_1 of butanediol\n\nAtoms\n\n", datafile.nAtoms, datafile.nBonds, datafile.nAngles, datafile.nDihedrals, datafile.nImpropers, datafile.nAtomTypes, datafile.nBondTypes, datafile.nAngleTypes, datafile.nDihedralTypes, datafile.nImproperTypes, floor (simBoxDimension.xlo), ceil (simBoxDimension.xhi), floor (simBoxDimension.ylo), ceil (simBoxDimension.yhi), floor (simBoxDimension.zlo), ceil (simBoxDimension.zhi));
 	fflush (output);
 }
 
@@ -1169,7 +1189,7 @@ int main(int argc, char const *argv[])
 
 	if (argc == 1)
 	{
-		printf("\nERROR: Insufficient arguments passed.\n\n   ARGS TO PASS:\n   ~~~~~~~~~~~~~\n\n * argv[0] = program\n * argv[1] = input dump file name\n * argv[2] = input data file\n * argv[3] = output file name (*.data and *.xyz will be saved)\n\n");
+		printf("\nERROR: Insufficient arguments passed.\n\n   ARGS TO PASS:\n   ~~~~~~~~~~~~~\n\n * argv[0] = program\n * argv[1] = input dump file name\n * argv[2] = input data file\n * argv[3] = output file name (*.data and *.xyz will be saved)\n\nExample: ./addSolvent dump.lammpstrj output.data outputFolder/solvated\n\n");
 		exit (1);
 	}
 	int nAtoms = getNatoms (argv[1]), lineCount = 0;
@@ -1258,14 +1278,22 @@ int main(int argc, char const *argv[])
 	datafile.nDihedrals += (nButanediol * 5);
 	dihedrals = (DATA_DIHEDRALS *) realloc (dihedrals, datafile.nDihedrals * sizeof (DATA_DIHEDRALS));
 
-	createWaterTopology (&atoms, &bonds, &angles, nWater, water, &datafile_raw, &datafile);
-	createButanediolTopology (&atoms, &bonds, &angles, &dihedrals, nButanediol, butanediol, &datafile_raw, &datafile);
+	int waterMolType = 2, butanediolMolType;
+
+	if (nWater == 0)
+		butanediolMolType = 2;
+	else
+		butanediolMolType = 3;
+
+	createWaterTopology (&atoms, &bonds, &angles, nWater, water, &datafile_raw, &datafile, waterMolType);
+	createButanediolTopology (&atoms, &bonds, &angles, &dihedrals, nButanediol, butanediol, &datafile_raw, &datafile, butanediolMolType);
 
 	// Recalculating nAtomTypes, nBondsTypes, nAngleTypes and nDihedralTypes after adding new solvent molecules
 	recalculateNAtoms (atoms, &datafile);
 	recalculateNBonds (bonds, &datafile);
 	recalculateNAngles (angles, &datafile);
 	recalculateNDihedrals (dihedrals, &datafile);
+	simBoxDimension = recalculateSimBoxDimension (atoms, datafile);
 
 	// Printing datafile
 	print_datafileHeader (output, simBoxDimension, datafile);
