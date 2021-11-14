@@ -651,15 +651,15 @@ int findNWater (float waterFraction, BOUNDS simBoxDimension)
 	return nWater;
 }
 
-DATA_ATOMS *populateButanediol (BOUNDS simBoxDimension, int nButanediol)
+DATA_ATOMS *populateButanediol (BOUNDS simBoxDimension, int *nButanediol)
 {
-	fprintf(stdout, "Adding %d butanediol molecules...\n", nButanediol);
+	fprintf(stdout, "Adding %d butanediol molecules...\n", (*nButanediol));
 	fflush (stdout);
 
 	DATA_ATOMS *butanediol;
-	butanediol = (DATA_ATOMS *) calloc (nButanediol, sizeof (DATA_ATOMS));
+	butanediol = (DATA_ATOMS *) calloc ((*nButanediol), sizeof (DATA_ATOMS));
 
-	float nBins_x = cbrt (nButanediol), nBins_y = cbrt (nButanediol), nBins_z = cbrt (nButanediol);
+	float nBins_x = cbrt (*nButanediol), nBins_y = cbrt (*nButanediol), nBins_z = cbrt (*nButanediol);
 	int nBins_x_int = floor (nBins_x), nBins_y_int = floor (nBins_y), nBins_z_int = floor (nBins_z);
 	float xDistSeparation = (fabs (simBoxDimension.xhi) + fabs (simBoxDimension.xlo)) / nBins_x, yDistSeparation = (fabs (simBoxDimension.yhi) + fabs (simBoxDimension.ylo)) / nBins_y, zDistSeparation = (fabs (simBoxDimension.zhi) + fabs (simBoxDimension.zlo)) / nBins_z;
 	int currentButanediol = 0;
@@ -680,19 +680,20 @@ DATA_ATOMS *populateButanediol (BOUNDS simBoxDimension, int nButanediol)
 	}
 
 	printf("Butanediol added: %d\n", currentButanediol);
+	(*nButanediol) = currentButanediol;
 
 	return butanediol;
 }
 
-DATA_ATOMS *populateWater (BOUNDS simBoxDimension, int nWater)
+DATA_ATOMS *populateWater (BOUNDS simBoxDimension, int *nWater)
 {
-	fprintf(stdout, "Adding %d water molecules...\n", nWater);
+	fprintf(stdout, "Adding %d water molecules...\n", (*nWater));
 	fflush (stdout);
 
 	DATA_ATOMS *water;
-	water = (DATA_ATOMS *) calloc (nWater, sizeof (DATA_ATOMS));
+	water = (DATA_ATOMS *) calloc ((*nWater), sizeof (DATA_ATOMS));
 
-	float nBins_x = cbrt (nWater), nBins_y = cbrt (nWater), nBins_z = cbrt (nWater);
+	float nBins_x = cbrt (*nWater), nBins_y = cbrt (*nWater), nBins_z = cbrt (*nWater);
 	int nBins_x_int = (int) floor (nBins_x), nBins_y_int = (int) floor (nBins_y), nBins_z_int = (int) floor (nBins_z);
 	float xDistSeparation = (fabs (simBoxDimension.xhi) + fabs (simBoxDimension.xlo)) / nBins_x, yDistSeparation = ( fabs(simBoxDimension.yhi) + fabs (simBoxDimension.ylo)) / nBins_y, zDistSeparation = (fabs (simBoxDimension.zhi) + fabs (simBoxDimension.zlo)) / nBins_z;
 	int currentWater = 0;
@@ -713,6 +714,7 @@ DATA_ATOMS *populateWater (BOUNDS simBoxDimension, int nWater)
 	}
 
 	printf("Water added: %d\n", currentWater);
+	(*nWater) = currentWater;
 
 	return water;
 }
@@ -1260,8 +1262,8 @@ int main(int argc, char const *argv[])
 	water = (DATA_ATOMS *) calloc (nWater, sizeof (DATA_ATOMS));
 	butanediol = (DATA_ATOMS *) calloc (nButanediol, sizeof (DATA_ATOMS));
 
-	butanediol = populateButanediol (simBoxDimension, nButanediol);
-	water = populateWater (simBoxDimension, nWater);
+	butanediol = populateButanediol (simBoxDimension, &nButanediol);
+	water = populateWater (simBoxDimension, &nWater);
 
 	// Creating topology information for water and butanediol
 	// Reallocating memory for extra solvent atoms
