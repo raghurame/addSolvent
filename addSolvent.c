@@ -651,10 +651,17 @@ int findNWater (float waterFraction, BOUNDS simBoxDimension)
 	return nWater;
 }
 
-DATA_ATOMS *populateButanediol (BOUNDS simBoxDimension, int *nButanediol)
+DATA_ATOMS *populateButanediol (BOUNDS simBoxDimension, float scaleSimBoxDimension, int *nButanediol, DATA_ATOMS *atoms, DATAFILE_INFO datafile)
 {
 	fprintf(stdout, "Adding %d butanediol molecules...\n", (*nButanediol));
 	fflush (stdout);
+
+	simBoxDimension.xlo += ((scaleSimBoxDimension / 100) * simBoxDimension.xlo);
+	simBoxDimension.xhi += ((scaleSimBoxDimension / 100) * simBoxDimension.xhi);
+	simBoxDimension.ylo += ((scaleSimBoxDimension / 100) * simBoxDimension.ylo);
+	simBoxDimension.yhi += ((scaleSimBoxDimension / 100) * simBoxDimension.yhi);
+	simBoxDimension.zlo += ((scaleSimBoxDimension / 100) * simBoxDimension.zlo);
+	simBoxDimension.zhi += ((scaleSimBoxDimension / 100) * simBoxDimension.zhi);
 
 	DATA_ATOMS *butanediol;
 	butanediol = (DATA_ATOMS *) calloc ((*nButanediol), sizeof (DATA_ATOMS));
@@ -685,10 +692,17 @@ DATA_ATOMS *populateButanediol (BOUNDS simBoxDimension, int *nButanediol)
 	return butanediol;
 }
 
-DATA_ATOMS *populateWater (BOUNDS simBoxDimension, int *nWater)
+DATA_ATOMS *populateWater (BOUNDS simBoxDimension, float scaleSimBoxDimension, int *nWater, DATA_ATOMS *atoms, DATAFILE_INFO datafile)
 {
 	fprintf(stdout, "Adding %d water molecules...\n", (*nWater));
 	fflush (stdout);
+
+	simBoxDimension.xlo += ((scaleSimBoxDimension / 100) * simBoxDimension.xlo);
+	simBoxDimension.xhi += ((scaleSimBoxDimension / 100) * simBoxDimension.xhi);
+	simBoxDimension.ylo += ((scaleSimBoxDimension / 100) * simBoxDimension.ylo);
+	simBoxDimension.yhi += ((scaleSimBoxDimension / 100) * simBoxDimension.yhi);
+	simBoxDimension.zlo += ((scaleSimBoxDimension / 100) * simBoxDimension.zlo);
+	simBoxDimension.zhi += ((scaleSimBoxDimension / 100) * simBoxDimension.zhi);
 
 	DATA_ATOMS *water;
 	water = (DATA_ATOMS *) calloc ((*nWater), sizeof (DATA_ATOMS));
@@ -1114,8 +1128,15 @@ BOUNDS recalculateSimBoxDimension (DATA_ATOMS *atoms, DATAFILE_INFO datafile)
 	return simBoxDimension;
 }
 
-void print_datafileHeader (FILE *output, BOUNDS simBoxDimension, DATAFILE_INFO datafile)
+void print_datafileHeader (FILE *output, BOUNDS simBoxDimension, float scaleSimBoxDimension, DATAFILE_INFO datafile)
 {
+	simBoxDimension.xlo += ((scaleSimBoxDimension / 100) * simBoxDimension.xlo);
+	simBoxDimension.xhi += ((scaleSimBoxDimension / 100) * simBoxDimension.xhi);
+	simBoxDimension.ylo += ((scaleSimBoxDimension / 100) * simBoxDimension.ylo);
+	simBoxDimension.yhi += ((scaleSimBoxDimension / 100) * simBoxDimension.yhi);
+	simBoxDimension.zlo += ((scaleSimBoxDimension / 100) * simBoxDimension.zlo);
+	simBoxDimension.zhi += ((scaleSimBoxDimension / 100) * simBoxDimension.zhi);
+
 	fprintf(output, "Created by you v1.8.1 on today, this month, this year, current time.\n\n%d atoms\n%d bonds\n%d angles\n%d dihedrals\n%d impropers\n\n%d atom types\n%d bond types\n%d angle types\n%d dihedral types\n%d improper types\n\n%.2f %.2f xlo xhi\n%.2f %.2f ylo yhi\n%.2f %.2f zlo zhi\n\nMasses\n\n1 1.008    # H of NaPSS\n2 12.011   # C of NaPSS\n3 13.018   # CH of NaPSS\n4 14.026   # CH2 of NaPSS\n5 32.065   # S of NaPSS\n6 15.999   # O of NaPSS\n7 22.989   # Na of NaPSS\n8 15.999   # O of H2O\n9 1.008    # H of H2O\n10 1.008   # H of butanediol\n11 15.999  # O of butanediol\n12 14.1707 # CH2_1 of butanediol\n\nAtoms\n\n", datafile.nAtoms, datafile.nBonds, datafile.nAngles, datafile.nDihedrals, datafile.nImpropers, datafile.nAtomTypes, datafile.nBondTypes, datafile.nAngleTypes, datafile.nDihedralTypes, datafile.nImproperTypes, floor (simBoxDimension.xlo), ceil (simBoxDimension.xhi), floor (simBoxDimension.ylo), ceil (simBoxDimension.yhi), floor (simBoxDimension.zlo), ceil (simBoxDimension.zhi));
 	fflush (output);
 }
@@ -1262,8 +1283,11 @@ int main(int argc, char const *argv[])
 	water = (DATA_ATOMS *) calloc (nWater, sizeof (DATA_ATOMS));
 	butanediol = (DATA_ATOMS *) calloc (nButanediol, sizeof (DATA_ATOMS));
 
-	butanediol = populateButanediol (simBoxDimension, &nButanediol);
-	water = populateWater (simBoxDimension, &nWater);
+	float scaleSimBoxDimension;
+	printf("\n\nEnter the factor to scale simulation box dimension: (in percentage, 0 means original and 100 means double the original length. Molecules will be distributed in the scaled simulation box. During MD simulation, simulation box can be deformed to achieve appropriate density.):  ");	scanf ("%f", &scaleSimBoxDimension); printf ("\n");
+
+	butanediol = populateButanediol (simBoxDimension, scaleSimBoxDimension, &nButanediol, atoms, datafile);
+	water = populateWater (simBoxDimension, scaleSimBoxDimension, &nWater, atoms, datafile);
 
 	// Creating topology information for water and butanediol
 	// Reallocating memory for extra solvent atoms
@@ -1298,7 +1322,7 @@ int main(int argc, char const *argv[])
 	simBoxDimension = recalculateSimBoxDimension (atoms, datafile);
 
 	// Printing datafile
-	print_datafileHeader (output, simBoxDimension, datafile);
+	print_datafileHeader (output, simBoxDimension, scaleSimBoxDimension, datafile);
 	print_dataAtoms (output, atoms, datafile);
 	print_XYZatoms (outputXYZ, atoms, datafile);
 	print_dataBonds (output, bonds, datafile);
