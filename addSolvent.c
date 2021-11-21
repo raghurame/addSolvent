@@ -668,8 +668,8 @@ DATA_ATOMS *populateButanediol (BOUNDS simBoxDimension, float scaleSimBoxDimensi
 
 	float nBins_x = cbrt (*nButanediol), nBins_y = cbrt (*nButanediol), nBins_z = cbrt (*nButanediol);
 	int nBins_x_int = floor (nBins_x), nBins_y_int = floor (nBins_y), nBins_z_int = floor (nBins_z);
-	float xDistSeparation = (fabs (simBoxDimension.xhi) + fabs (simBoxDimension.xlo)) / nBins_x, yDistSeparation = (fabs (simBoxDimension.yhi) + fabs (simBoxDimension.ylo)) / nBins_y, zDistSeparation = (fabs (simBoxDimension.zhi) + fabs (simBoxDimension.zlo)) / nBins_z;
-	int currentButanediol = 0;
+	float xDistSeparation = (fabs (simBoxDimension.xhi) + fabs (simBoxDimension.xlo)) / nBins_x, yDistSeparation = (fabs (simBoxDimension.yhi) + fabs (simBoxDimension.ylo)) / nBins_y, zDistSeparation = (fabs (simBoxDimension.zhi) + fabs (simBoxDimension.zlo)) / nBins_z, distance;
+	int currentButanediol = 0, isOverlap = 0;
 
 	// Distribute the butanediol molecules evenly
 	for (int i = 0; i < nBins_x_int; ++i)
@@ -681,7 +681,50 @@ DATA_ATOMS *populateButanediol (BOUNDS simBoxDimension, float scaleSimBoxDimensi
 				butanediol[currentButanediol].x = simBoxDimension.xlo + ((i + 1) * xDistSeparation) - (xDistSeparation / 2);
 				butanediol[currentButanediol].y = simBoxDimension.ylo + ((j + 1) * yDistSeparation) - (yDistSeparation / 2);
 				butanediol[currentButanediol].z = simBoxDimension.zlo + ((k + 1) * zDistSeparation) - (zDistSeparation / 2);
-				currentButanediol++;
+
+				for (int l = 0; l < datafile.nAtoms; ++l)
+				{
+					distance = sqrt (pow (butanediol[currentButanediol].x - 2.18 - atoms[l].x, 2) + pow (butanediol[currentButanediol].y + 1.29 - atoms[i].y, 2) + pow (butanediol[currentButanediol].z - 1.26 - atoms[l].z, 2));
+					if (distance < 3)
+						isOverlap = 1;
+
+					distance = sqrt (pow (butanediol[currentButanediol].x - 1.93 - atoms[l].x, 2) + pow (butanediol[currentButanediol].y + 0.34 - atoms[i].y, 2) + pow (butanediol[currentButanediol].z - 1.36 - atoms[l].z, 2));
+					if (distance < 3)
+						isOverlap = 1;
+
+					distance = sqrt (pow (butanediol[currentButanediol].x - 0.53 - atoms[l].x, 2) + pow (butanediol[currentButanediol].y + 0.34 - atoms[i].y, 2) + pow (butanediol[currentButanediol].z - 1.37 - atoms[l].z, 2));
+					if (distance < 3)
+						isOverlap = 1;
+
+					distance = sqrt (pow (butanediol[currentButanediol].x - atoms[l].x, 2) + pow (butanediol[currentButanediol].y - atoms[i].y, 2) + pow (butanediol[currentButanediol].z - atoms[l].z, 2));
+					if (distance < 3)
+						isOverlap = 1;
+
+					distance = sqrt (pow (butanediol[currentButanediol].x + 1.52 - atoms[l].x, 2) + pow (butanediol[currentButanediol].y - atoms[i].y, 2) + pow (butanediol[currentButanediol].z - atoms[l].z, 2));
+					if (distance < 3)
+						isOverlap = 1;
+
+					distance = sqrt (pow (butanediol[currentButanediol].x + 2.05 - atoms[l].x, 2) + pow (butanediol[currentButanediol].y - 1.25 - atoms[i].y, 2) + pow (butanediol[currentButanediol].z - 0.68 - atoms[l].z, 2));
+					if (distance < 3)
+						isOverlap = 1;
+
+					distance = sqrt (pow (butanediol[currentButanediol].x + 3.44 - atoms[l].x, 2) + pow (butanediol[currentButanediol].y - 1.23 - atoms[i].y, 2) + pow (butanediol[currentButanediol].z - 0.67 - atoms[l].z, 2));
+					if (distance < 3)
+						isOverlap = 1;
+
+					distance = sqrt (pow (butanediol[currentButanediol].x + 3.67 - atoms[l].x, 2) + pow (butanediol[currentButanediol].y - 1.80 - atoms[i].y, 2) + pow (butanediol[currentButanediol].z + 0.92 - atoms[l].z, 2));
+					if (distance < 3)
+						isOverlap = 1;
+				}
+
+				if (isOverlap == 0)
+				{
+					currentButanediol++;
+				}
+				else
+				{
+					isOverlap = 0;
+				}
 			}
 		}
 	}
@@ -709,8 +752,8 @@ DATA_ATOMS *populateWater (BOUNDS simBoxDimension, float scaleSimBoxDimension, i
 
 	float nBins_x = cbrt (*nWater), nBins_y = cbrt (*nWater), nBins_z = cbrt (*nWater);
 	int nBins_x_int = (int) floor (nBins_x), nBins_y_int = (int) floor (nBins_y), nBins_z_int = (int) floor (nBins_z);
-	float xDistSeparation = (fabs (simBoxDimension.xhi) + fabs (simBoxDimension.xlo)) / nBins_x, yDistSeparation = ( fabs(simBoxDimension.yhi) + fabs (simBoxDimension.ylo)) / nBins_y, zDistSeparation = (fabs (simBoxDimension.zhi) + fabs (simBoxDimension.zlo)) / nBins_z;
-	int currentWater = 0;
+	float xDistSeparation = (fabs (simBoxDimension.xhi) + fabs (simBoxDimension.xlo)) / nBins_x, yDistSeparation = ( fabs(simBoxDimension.yhi) + fabs (simBoxDimension.ylo)) / nBins_y, zDistSeparation = (fabs (simBoxDimension.zhi) + fabs (simBoxDimension.zlo)) / nBins_z, distance;
+	int currentWater = 0, isOverlap = 0;
 
 	// Distributing water molecules evenly
 	for (int i = 0; i < nBins_x_int; ++i)
@@ -722,7 +765,30 @@ DATA_ATOMS *populateWater (BOUNDS simBoxDimension, float scaleSimBoxDimension, i
 				water[currentWater].x = simBoxDimension.xlo + ((i + 1) * xDistSeparation) - (xDistSeparation / 2);
 				water[currentWater].y = simBoxDimension.ylo + ((j + 1) * yDistSeparation) - (yDistSeparation / 2);
 				water[currentWater].z = simBoxDimension.zlo + ((k + 1) * zDistSeparation) - (zDistSeparation / 2);
-				currentWater++;
+
+				for (int l = 0; l < datafile.nAtoms; ++l)
+				{
+					distance = sqrt (pow (water[currentWater].x - atoms[l].x, 2) + pow (water[currentWater].y - atoms[l].y, 2) + pow (water[currentWater].z - atoms[l].z, 2));
+					if (distance < 3)
+						isOverlap = 1;
+
+					distance = sqrt (pow (water[currentWater].x - 0.32 - atoms[l].x, 2) + pow (water[currentWater].y + 0.13 - atoms[l].y, 2) + pow (water[currentWater].z - 0.91 - atoms[l].z, 2));
+					if (distance < 3)
+						isOverlap = 1;
+
+					distance = sqrt (pow (water[currentWater].x + 0.97 - atoms[l].x, 2) + pow (water[currentWater].y - atoms[l].y, 2) + pow (water[currentWater].z - atoms[l].z, 2));
+					if (distance < 3)
+						isOverlap = 1;
+				}
+
+				if (isOverlap == 0)
+				{
+					currentWater++;
+				}
+				else
+				{
+					isOverlap = 0;
+				}
 			}
 		}
 	}
