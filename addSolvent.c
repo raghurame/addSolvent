@@ -1216,6 +1216,16 @@ void print_dataAtoms (FILE *output, DATA_ATOMS *atoms, DATAFILE_INFO datafile)
 	}
 }
 
+void print_pdbAtoms (FILE *outputPDBfile, DATA_ATOMS *atoms, DATAFILE_INFO datafile)
+{
+	for (int i = 0; i < datafile.nAtoms; ++i)
+	{
+		fprintf(stdout, "%s%5d%-4s\n", "ATOM", atoms[i].id, "CHK");
+		fflush (stdout);
+		sleep (1);
+	}
+}
+
 void print_XYZatoms (FILE *outputXYZ, DATA_ATOMS *atoms, DATAFILE_INFO datafile)
 {
 	fprintf(outputXYZ, "%d\n", datafile.nAtoms);
@@ -1283,20 +1293,23 @@ int main(int argc, char const *argv[])
 	}
 	int nAtoms = getNatoms (argv[1]), lineCount = 0;
 
-	char *pipeString, lineString[1000], *outputDatafile, *outputXYZfile;
+	char *pipeString, lineString[1000], *outputDatafile, *outputXYZfile, *outputPDBfile;
 	pipeString = (char *) malloc (500 * sizeof (char));
 	outputDatafile = (char *) malloc (500 * sizeof (char));
 	outputXYZfile = (char *) malloc (500 * sizeof (char));
+	outputPDBfile = (char *) malloc (500 * sizeof (char));
 
 	sprintf (pipeString, "tail -%d %s", nAtoms, argv[1]);
 	sprintf (outputXYZfile, "%s.xyz", argv[3]);
 	sprintf (outputDatafile, "%s.data", argv[3]);
+	sprintf (outputPDBfile, "%s.pdb", argv[3]);
 
-	FILE *input, *output, *input2, *outputXYZ;
+	FILE *input, *output, *input2, *outputXYZ, *outputPDB;
 	input = popen (pipeString, "r");
 	input2 = fopen (argv[1], "r");
 	output = fopen (outputDatafile, "w");
 	outputXYZ = fopen (outputXYZfile, "w");
+	outputPDB = fopen (outputPDBfile, "w");
 
 	DUMP *traj, com, dimLow, dimHigh, boxLength, dumpLow, dumpHigh, chainDimension;
 	BOUNDS dumpDimension, simBoxDimension;
@@ -1397,6 +1410,7 @@ int main(int argc, char const *argv[])
 	print_dataImpropers (output, impropers, datafile);
 
 	// Printing PDB file
+	print_pdbAtoms (outputPDB, atoms, datafile);
 
 	// Printing GROMACS topology files
 
@@ -1404,6 +1418,7 @@ int main(int argc, char const *argv[])
 	fclose (output);
 	fclose (input2);
 	fclose (outputXYZ);
+	fclose (outputPDB);
 
 	return 0;
 }
