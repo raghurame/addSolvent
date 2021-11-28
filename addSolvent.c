@@ -1387,7 +1387,7 @@ int main(int argc, char const *argv[])
 	recalculateNDihedrals (dihedrals, &datafile);
 	simBoxDimension = recalculateSimBoxDimension (atoms, datafile);
 
-	// Printing datafile
+	// Printing LAMMPS datafile
 	print_datafileHeader (output, simBoxDimension, scaleSimBoxDimension, datafile);
 	print_dataAtoms (output, atoms, datafile);
 	print_XYZatoms (outputXYZ, atoms, datafile);
@@ -1395,6 +1395,10 @@ int main(int argc, char const *argv[])
 	print_dataAngles (output, angles, datafile);
 	print_dataDihedrals (output, dihedrals, datafile);
 	print_dataImpropers (output, impropers, datafile);
+
+	// Printing PDB file
+
+	// Printing GROMACS topology files
 
 	fclose (input);
 	fclose (output);
