@@ -1293,23 +1293,29 @@ int main(int argc, char const *argv[])
 	}
 	int nAtoms = getNatoms (argv[1]), lineCount = 0;
 
-	char *pipeString, lineString[1000], *outputDatafile, *outputXYZfile, *outputPDBfile;
+	char *pipeString, lineString[1000], *outputData_filename, *outputXYZ_filename, *outputPDB_filename, *outputGRO_filename, *outputTOP_filename;
 	pipeString = (char *) malloc (500 * sizeof (char));
-	outputDatafile = (char *) malloc (500 * sizeof (char));
-	outputXYZfile = (char *) malloc (500 * sizeof (char));
-	outputPDBfile = (char *) malloc (500 * sizeof (char));
+	outputData_filename = (char *) malloc (500 * sizeof (char));
+	outputXYZ_filename = (char *) malloc (500 * sizeof (char));
+	outputPDB_filename = (char *) malloc (500 * sizeof (char));
+	outputGRO_filename = (char *) malloc (500 * sizeof (char);
+	outputTOP_filename = (char *) malloc (500 * sizeof (char));
 
 	sprintf (pipeString, "tail -%d %s", nAtoms, argv[1]);
-	sprintf (outputXYZfile, "%s.xyz", argv[3]);
-	sprintf (outputDatafile, "%s.data", argv[3]);
-	sprintf (outputPDBfile, "%s.pdb", argv[3]);
+	sprintf (outputData_filename, "%s.data", argv[3]);
+	sprintf (outputXYZ_filename, "%s.xyz", argv[3]);
+	sprintf (outputPDB_filename, "%s.pdb", argv[3]);
+	sprintf (outputGRO_filename, "%s.gro", argv[3]);
+	sprintf (outputTOP_filename, "%s.top", argv[3]);
 
-	FILE *input, *output, *input2, *outputXYZ, *outputPDB;
+	FILE *input, *output, *input2, *outputXYZ, *outputPDB, *outputGRO, *outputTOP;
 	input = popen (pipeString, "r");
 	input2 = fopen (argv[1], "r");
-	output = fopen (outputDatafile, "w");
-	outputXYZ = fopen (outputXYZfile, "w");
-	outputPDB = fopen (outputPDBfile, "w");
+	output = fopen (outputData_filename, "w");
+	outputXYZ = fopen (outputXYZ_filename, "w");
+	outputPDB = fopen (outputPDB_filename, "w");
+	outputGRO = fopen (outputGRO_filename, "w");
+	outputTOP = fopen (outputTOP_filename, "w");
 
 	DUMP *traj, com, dimLow, dimHigh, boxLength, dumpLow, dumpHigh, chainDimension;
 	BOUNDS dumpDimension, simBoxDimension;
@@ -1410,9 +1416,11 @@ int main(int argc, char const *argv[])
 	print_dataImpropers (output, impropers, datafile);
 
 	// Printing PDB file
-	print_pdbAtoms (outputPDB, atoms, datafile);
+	// print_pdbAtoms (outputPDB, atoms, datafile);
 
 	// Printing GROMACS topology files
+	print_gro (outputGRO)
+	print_topol (outputTOP)
 
 	fclose (input);
 	fclose (output);
