@@ -1298,7 +1298,7 @@ int main(int argc, char const *argv[])
 	outputData_filename = (char *) malloc (500 * sizeof (char));
 	outputXYZ_filename = (char *) malloc (500 * sizeof (char));
 	outputPDB_filename = (char *) malloc (500 * sizeof (char));
-	outputGRO_filename = (char *) malloc (500 * sizeof (char);
+	outputGRO_filename = (char *) malloc (500 * sizeof (char));
 	outputTOP_filename = (char *) malloc (500 * sizeof (char));
 
 	sprintf (pipeString, "tail -%d %s", nAtoms, argv[1]);
@@ -1419,8 +1419,8 @@ int main(int argc, char const *argv[])
 	// print_pdbAtoms (outputPDB, atoms, datafile);
 
 	// Printing GROMACS topology files
-	print_gro (outputGRO)
-	print_topol (outputTOP)
+	print_gro (outputGRO);
+	print_topol (outputTOP);
 
 	fclose (input);
 	fclose (output);
