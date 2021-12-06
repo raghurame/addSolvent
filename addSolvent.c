@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <time.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <errno.h>
 
 /*
  * ARGS TO PASS:
@@ -14,6 +17,88 @@
  * argv[2] = input data file name
  *
  */
+
+int isFile(const char *name)
+{
+	DIR *directory = opendir (name);
+	if (directory!=NULL)
+	{
+		closedir(directory);
+		return 0;
+	}
+	if(errno==ENOTDIR)
+	{
+		return 1;
+	}
+
+	return -1;
+}
+
+int displayFiles(const char *fileExtension)
+{
+	int nFiles = 0;
+	DIR *parentDirectory;
+	parentDirectory = opendir ("./");
+
+	struct dirent *filePointer;
+	/* Scan all the files using filePointer */
+	while ((filePointer = readdir (parentDirectory)))
+	{
+		if (isFile(filePointer -> d_name) && strstr(filePointer -> d_name, fileExtension))
+		{
+			nFiles++;
+			printf("%d --> %s\n", nFiles, filePointer -> d_name);
+		}
+	}
+	return nFiles;
+}
+
+char *getInputFileName()
+{
+	int nFiles = 0;
+	char *inputFileName, fileExtension[200], terminalString[200];
+	int fileRequired;
+	inputFileName = (char *) malloc (200 * sizeof (char));
+
+	printf("Enter the file extension or a match string to search in current directory... "); scanf ("%s", &fileExtension);
+	// fgets (terminalString, sizeof (terminalString), stdin);
+	// sscanf (terminalString, "%s", fileExtension); 
+	printf("\n");
+	nFiles = displayFiles(fileExtension);
+
+	if (nFiles > 0)
+	{
+		fprintf(stdout, "\nWhich file would you like to input? Enter a number between (1 to %d): ", nFiles); 
+		fflush (stdout);
+		scanf ("%d", &fileRequired);
+		// fgets(terminalString, sizeof (terminalString), stdin);
+		// sscanf (terminalString, "%d", &fileRequired); 
+	}
+	else
+	{
+		printf("No files found with the match string\n"); exit(1);
+	}
+
+	nFiles = 0;
+	DIR *parentDirectory;
+	parentDirectory = opendir ("./");
+
+	struct dirent *filePointer;
+
+	/* Scan all the files using filePointer */
+	while ((filePointer = readdir (parentDirectory)))
+	{
+		if (isFile(filePointer -> d_name) && strstr(filePointer -> d_name, fileExtension))
+		{
+			nFiles++;
+			if (fileRequired == nFiles)
+			{
+				strcpy (inputFileName, filePointer -> d_name);
+			}
+		}
+	}
+	return inputFileName;
+}
 
 int getNatoms (const char *inputFileName)
 {
@@ -37,7 +122,7 @@ int getNatoms (const char *inputFileName)
 typedef struct datafile_atoms
 {
 	int resNumber;
-	char resName[5];
+	char resName[5], atomName[5];
 
 	int id, molType, atomType;
 	float charge, x, y, z;
@@ -1337,8 +1422,10 @@ int *findConnectedAtoms (int id, DATA_BONDS *bonds, DATAFILE_INFO datafile)
 
 void assignResidues (DATA_ATOMS **atoms, DATA_BONDS *bonds, DATAFILE_INFO datafile)
 {
-	int *connectedAtoms;
+	int *connectedAtoms, lastResNumber;
 	connectedAtoms = (int *) malloc (4 * sizeof (int));
+
+	char lastResName[5];
 
 	for (int i = 0; i < datafile.nAtoms; ++i)
 	{
@@ -1481,6 +1568,13 @@ void assignResidues (DATA_ATOMS **atoms, DATA_BONDS *bonds, DATAFILE_INFO datafi
 					strcpy ((*atoms)[i].resName, (*atoms)[connectedAtoms[0] - 1].resName);
 				}
 			}
+			else
+			{
+				// This is the case for Na atoms.
+				// They are not connected to any other atoms using bonds
+				// resName and resNumber should be assigned iteratively for these Na ions
+				// They should be ignored initially. Once all connected atoms are assigned, then Na residues can be assigned.
+			}
 		}
 		else
 		{
@@ -1489,6 +1583,96 @@ void assignResidues (DATA_ATOMS **atoms, DATA_BONDS *bonds, DATAFILE_INFO datafi
 		}
 		sleep (1);
 	}
+
+	for (int i = 0; i < datafile.nAtoms; ++i)
+	{
+		printf("%5d%-5s%5d\n", (*atoms)[i].resNumber, (*atoms)[i].resName, (*atoms)[i].id);
+		sleep (1);
+	}
+}
+
+void assignResiduesFromFile (DATA_ATOMS **atoms, DATA_BONDS *bonds, DATAFILE_INFO datafile)
+{
+	char *resFilename, lineString[1000], **inputResName, **inputAtomName, tempResName[5], tempAtomName[5]; 
+	resFilename = (char *) malloc (50 * sizeof (char));
+
+	resFilename = getInputFileName ();
+
+	FILE *readResidues;
+	readResidues = fopen (resFilename, "r");
+
+	int nResidue = 0, highestResidueNumber = 0, *inputResNumber, tempResNumber, atomID;
+
+	while (fgets (lineString, 1000, readResidues) != NULL)
+	{
+		if (lineString[0] != '#')
+		{
+			nResidue++;
+		}
+	}
+
+	fprintf(stdout, "%s\n", "Checking");
+	fflush (stdout);
+
+	inputResName = (char **) malloc (nResidue * sizeof (char *));
+	inputAtomName = (char **) malloc (nResidue * sizeof (char *));
+	inputResNumber = (int *) malloc (nResidue * sizeof (int));
+
+	for (int i = 0; i < nResidue; ++i)
+	{
+		inputResName[i] = (char *) malloc (5 * sizeof (char));
+	}
+
+	for (int i = 0; i < nResidue; ++i)
+	{
+		inputAtomName[i] = (char *) malloc (5 * sizeof (char));
+	}
+
+
+	rewind (readResidues);
+	while (fgets (lineString, 1000, readResidues) != NULL)
+	{
+		if (lineString[0] != '#')
+		{
+			sscanf (lineString, "%d %s %s %d\n", &tempResNumber, &tempResName, &tempAtomName, &atomID);
+			sprintf (inputResName[atomID - 1], "%s", tempResName);
+			sprintf (inputAtomName[atomID - 1], "%s", tempAtomName);
+			inputResNumber[atomID - 1] = tempResNumber;
+		}
+	}
+
+	for (int i = 0; i < nResidue; ++i)
+	{
+		printf("%s %s %d\n", inputResName[i], inputAtomName[i], inputResNumber[i]);
+	}
+
+	// Assigning residues for PSS chain
+	for (int i = 0; i < datafile.nAtoms; ++i)
+	{
+		// fprintf(stdout, "%d %d %d %d %s\n", (*atoms)[i].id, (*atoms)[i].molType, (*atoms)[i].atomType, inputResNumber[(*atoms)[i].atomType - 1], inputResName[(*atoms)[i].atomType - 1]);
+		strcpy ((*atoms)[i].resName, inputResName[(*atoms)[i].atomType - 1]);
+		strcpy ((*atoms)[i].atomName, inputAtomName[(*atoms)[i].atomType - 1]);
+		(*atoms)[i].resNumber = inputResNumber[(*atoms)[i].atomType - 1];
+
+		if (inputResNumber[(*atoms)[i].atomType - 1] > highestResidueNumber)
+			highestResidueNumber = inputResNumber[(*atoms)[i].atomType - 1];
+	}
+
+	// Assigning residues for Na ions
+	for (int i = 0; i < datafile.nAtoms; ++i)
+	{
+		if ((*atoms)[i].resNumber == 0)
+		{
+			(*atoms)[i].resNumber = highestResidueNumber + 1;
+			highestResidueNumber++;
+		}
+
+		fprintf(stdout, "%d %d %d %d %s %s\n", (*atoms)[i].id, (*atoms)[i].molType, (*atoms)[i].atomType, (*atoms)[i].resNumber, (*atoms)[i].resName, (*atoms)[i].atomName);
+		sleep (1);
+	}
+
+	fclose (readResidues);
+	exit (1);
 }
 
 int main(int argc, char const *argv[])
@@ -1497,7 +1681,7 @@ int main(int argc, char const *argv[])
 
 	if (argc == 1)
 	{
-		printf("\nERROR: Insufficient arguments passed.\n\n   ARGS TO PASS:\n   ~~~~~~~~~~~~~\n\n * argv[0] = program\n * argv[1] = input dump file name\n * argv[2] = input data file\n * argv[3] = output file name (*.data and *.xyz will be saved)\n\nExample: ./addSolvent dump.lammpstrj output.data outputFolder/solvated\n\n");
+		printf("\nERROR: Insufficient arguments passed.\n\n   ARGS TO PASS:\n   ~~~~~~~~~~~~~\n\n * argv[0] = program\n * argv[1] = input dump file name\n * argv[2] = input data file\n * argv[3] = output file name (*.data and *.xyz will be saved)\n\nExample: ./addSolvent dump.lammpstrj output.data outputFolder/solvated\n\nLater, the program will prompt for a residue config file. Create a file named \"residue.config\" with the columns, \"resNumber resName atomName atomType\"\n\nNote that lines starting with \"#\" are considered as comment lines in the config file and they won't be considered.\n\n");
 		exit (1);
 	}
 	int nAtoms = getNatoms (argv[1]), lineCount = 0;
@@ -1567,7 +1751,8 @@ int main(int argc, char const *argv[])
 	}
 
 	// Assign residues
-	assignResidues (&atoms, bonds, datafile);
+	// assignResidues (&atoms, bonds, datafile);
+	assignResiduesFromFile (&atoms, bonds, datafile);
 
 	// Create solvent molecules
 	float solventDistance, butanediolFraction, waterFraction;
