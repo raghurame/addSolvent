@@ -36,6 +36,9 @@ int getNatoms (const char *inputFileName)
 
 typedef struct datafile_atoms
 {
+	int resNumber;
+	char resName[5];
+
 	int id, molType, atomType;
 	float charge, x, y, z;
 } DATA_ATOMS;
@@ -1282,6 +1285,165 @@ void print_dataImpropers (FILE *output, DATA_IMPROPERS *impropers, DATAFILE_INFO
 
 }
 
+int *findConnectedAtoms (int id, DATA_BONDS *bonds, DATAFILE_INFO datafile)
+{
+	int *connectedAtoms;
+	connectedAtoms = (int *) calloc (4, sizeof (int));
+
+	for (int i = 0; i < datafile.nBonds; ++i)
+	{
+		if (id == bonds[i].atom1)
+		{
+			if (connectedAtoms[0] == 0)
+			{
+				connectedAtoms[0] = bonds[i].atom2;
+			}
+			else if (connectedAtoms[1] == 0)
+			{
+				connectedAtoms[1] = bonds[i].atom2;
+			}
+			else if (connectedAtoms[2] == 0)
+			{
+				connectedAtoms[2] = bonds[i].atom2;
+			}
+			else if (connectedAtoms[3] == 0)
+			{
+				connectedAtoms[3] = bonds[i].atom2;
+			}
+		}
+		else if (id == bonds[i].atom2)
+		{
+			if (connectedAtoms[0] == 0)
+			{
+				connectedAtoms[0] = bonds[i].atom1;
+			}
+			else if (connectedAtoms[1] == 0)
+			{
+				connectedAtoms[1] = bonds[i].atom1;
+			}
+			else if (connectedAtoms[2] == 0)
+			{
+				connectedAtoms[2] = bonds[i].atom1;
+			}
+			else if (connectedAtoms[3] == 0)
+			{
+				connectedAtoms[3] = bonds[i].atom1;
+			}
+		}
+	}
+
+	return connectedAtoms;
+}
+
+void assignResidues (DATA_ATOMS **atoms, DATA_BONDS *bonds, DATAFILE_INFO datafile)
+{
+	int *connectedAtoms;
+	connectedAtoms = (int *) malloc (4 * sizeof (int));
+
+	for (int i = 0; i < datafile.nAtoms; ++i)
+	{
+		connectedAtoms = findConnectedAtoms ((*atoms)[i].id, bonds, datafile);
+		printf("id: %d; a1: %d, a2: %d, a3: %d, a4: %d\n", (*atoms)[i].id, connectedAtoms[0], connectedAtoms[1], connectedAtoms[2], connectedAtoms[3]);
+
+		// Check residue number and name for i'th atom here. 
+		// If it is NULL and 0, then check residue number and name for all connected atoms.
+		if (strstr ("NULL", (*atoms)[i].resName) && (*atoms)[i].resNumber == 0)
+		{
+			printf("%s and resNumber = 0\n", "NULL");
+			if (connectedAtoms[0] > 0)
+			{
+				if (strstr ("NULL", (*atoms)[connectedAtoms[0] - 1].resName) && (*atoms)[connectedAtoms[0] - 1].resNumber == 0)
+				{
+					if (connectedAtoms[1] > 0)
+					{
+						if (strstr ("NULL", (*atoms)[connectedAtoms[1] - 1].resName) && (*atoms)[connectedAtoms[1] - 1].resNumber == 0)
+						{
+							if (connectedAtoms[2] > 0)
+							{
+								if (strstr ("NULL", (*atoms)[connectedAtoms[2] - 1].resName) && (*atoms)[connectedAtoms[2] - 1].resNumber == 0)
+								{
+									if (connectedAtoms[3] > 0)
+									{
+										if (strstr ("NULL", (*atoms)[connectedAtoms[3] - 1].resName) && (*atoms)[connectedAtoms[3] - 1].resNumber == 0)
+										{
+											// resName and resNumber for i'th atom and all the connected atoms are not set.
+											// Prompt the user to set resName and resNumber.
+											printf("Residue name and number are not set for atom: %d; and also for all connected atoms: %d %d %d %d\n", (*atoms)[i].id, connectedAtoms[0], connectedAtoms[1], connectedAtoms[2], connectedAtoms[3]);
+											printf("Residue name: [Maximum of 5 characters]  "); scanf ("%s", &(*atoms)[i].resName);
+											printf("Residue number: [Maximum of 5 digits]  "); scanf ("%s", &(*atoms)[i].resNumber);
+
+											// Change resName and resNumber for all other connected atoms
+											strcpy ((*atoms)[connectedAtoms[0] - 1].resName, (*atoms)[i].resName);
+											strcpy ((*atoms)[connectedAtoms[1] - 1].resName, (*atoms)[i].resName);
+											strcpy ((*atoms)[connectedAtoms[2] - 1].resName, (*atoms)[i].resName);
+											strcpy ((*atoms)[connectedAtoms[3] - 1].resName, (*atoms)[i].resName);
+
+											(*atoms)[connectedAtoms[0] - 1].resNumber = (*atoms)[i].resNumber;
+											(*atoms)[connectedAtoms[1] - 1].resNumber = (*atoms)[i].resNumber;
+											(*atoms)[connectedAtoms[2] - 1].resNumber = (*atoms)[i].resNumber;
+											(*atoms)[connectedAtoms[3] - 1].resNumber = (*atoms)[i].resNumber;
+										}
+										else
+										{
+											// resName and resNumber are not set for i'th atom, but they are set for one of the connected atom.
+											// The resName and resNumber of connectedAtom[3] becomes the resName and resNumber for i'th atom.
+										}
+									}
+									else
+									{
+										// There is no 4th connected atom for i'th atom.
+										// resName and resNumber for i'th atom and all three other connected atoms are not set.
+										// Prompt the user to set resName and resNumber.
+										printf("Residue name and number are not set for atom: %d; and also for all connected atoms: %d %d %d %d\n", (*atoms)[i].id, connectedAtoms[0], connectedAtoms[1], connectedAtoms[2], connectedAtoms[3]);
+										printf("Residue name: [Maximum of 5 characters]  "); scanf ("%s", &(*atoms)[i].resName);
+										printf("Residue number: [Maximum of 5 digits]  "); scanf ("%s", &(*atoms)[i].resNumber);
+
+										// Change resName and resNumber for all other connected atoms
+										strcpy ((*atoms)[connectedAtoms[0] - 1].resName, (*atoms)[i].resName);
+										strcpy ((*atoms)[connectedAtoms[1] - 1].resName, (*atoms)[i].resName);
+										strcpy ((*atoms)[connectedAtoms[2] - 1].resName, (*atoms)[i].resName);
+
+										(*atoms)[connectedAtoms[0] - 1].resNumber = (*atoms)[i].resNumber;
+										(*atoms)[connectedAtoms[1] - 1].resNumber = (*atoms)[i].resNumber;
+										(*atoms)[connectedAtoms[2] - 1].resNumber = (*atoms)[i].resNumber;
+									}
+								}
+								else
+								{
+									// resName and resNumber are not set for i'th atom, but they are set for one of the connected atom.
+									// The resName and resNumber of connectedAtom[2] becomes the resName and resNumber for i'th atom.
+								}
+							}
+							else
+							{
+								// There are only 2 connected atoms.
+								// resName and resNumbe are not set for i'th atom and for other two connected atoms.
+								// Prompt the user to set resName and resNumber.
+							}
+						}
+						else
+						{
+							// resName and resNumber are not set for i'th atom, but they are set for one of the connected atom.
+							// The resName and resNumber of connectedAtom[1] becomes the resName and resNumber for i'th atom.
+						}
+					}
+				}
+				else
+				{
+					// resName and resNumber are not set for i'th atom, but they are set for one of the connected atom.
+					// The resName and resNumber of connectedAtom[0] becomes the resName and resNumber for i'th atom.
+				}
+			}
+		}
+		else
+		{
+			printf("Not NULL\n");
+			// resName and resNumber are already set for this atom
+		}
+		sleep (1);
+	}
+}
+
 int main(int argc, char const *argv[])
 {
 	printf("\n");
@@ -1353,7 +1515,12 @@ int main(int argc, char const *argv[])
 		atoms[i].x = traj[i].x;
 		atoms[i].y = traj[i].y;
 		atoms[i].z = traj[i].z;
+		sprintf (atoms[i].resName, "NULL");
+		atoms[i].resNumber = 0;
 	}
+
+	// Assign residues
+	assignResidues (&atoms, bonds, datafile);
 
 	// Create solvent molecules
 	float solventDistance, butanediolFraction, waterFraction;
@@ -1419,8 +1586,8 @@ int main(int argc, char const *argv[])
 	// print_pdbAtoms (outputPDB, atoms, datafile);
 
 	// Printing GROMACS topology files
-	print_gro (outputGRO);
-	print_topol (outputTOP);
+	// print_gro (outputGRO);
+	// print_topol (outputTOP);
 
 	fclose (input);
 	fclose (output);
