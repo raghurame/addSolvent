@@ -887,7 +887,7 @@ DATA_ATOMS *populateWater (BOUNDS simBoxDimension, float scaleSimBoxDimension, i
 	return water;
 }
 
-void createWaterTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **angles, int nWater, DATA_ATOMS *water, DATAFILE_INFO *datafile_raw, DATAFILE_INFO *datafile, int waterMolType)
+void createWaterTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **angles, int nWater, DATA_ATOMS *water, DATAFILE_INFO *datafile_raw, DATAFILE_INFO *datafile, int waterMolType, int *highestResidueNumber)
 {
 	int currentIDAtoms = (*datafile_raw).nAtoms, currentIDBonds = (*datafile_raw).nBonds, currentIDAngles = (*datafile_raw).nAngles;
 	int O_ID, H1_ID, H2_ID;
@@ -903,6 +903,9 @@ void createWaterTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **
 		(*atoms)[currentIDAtoms].x = water[i].x;
 		(*atoms)[currentIDAtoms].y = water[i].y;
 		(*atoms)[currentIDAtoms].z = water[i].z;
+		(*atoms)[currentIDAtoms].resNumber = (*highestResidueNumber) + 1;
+		sprintf ((*atoms)[currentIDAtoms].resName, "H2O");
+		sprintf ((*atoms)[currentIDAtoms].atomName, "O");
 		currentIDAtoms++;
 
 		// Adding hydrogens
@@ -915,6 +918,9 @@ void createWaterTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **
 		(*atoms)[currentIDAtoms].x = water[i].x - 0.32;
 		(*atoms)[currentIDAtoms].y = water[i].y + 0.13;
 		(*atoms)[currentIDAtoms].z = water[i].z - 0.91;
+		(*atoms)[currentIDAtoms].resNumber = (*highestResidueNumber) + 1;
+		sprintf ((*atoms)[currentIDAtoms].resName, "H2O");
+		sprintf ((*atoms)[currentIDAtoms].atomName, "H1");
 		currentIDAtoms++;
 
 		// Hydrogen 2
@@ -926,7 +932,11 @@ void createWaterTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **
 		(*atoms)[currentIDAtoms].x = water[i].x + 0.97;
 		(*atoms)[currentIDAtoms].y = water[i].y;
 		(*atoms)[currentIDAtoms].z = water[i].z;
+		(*atoms)[currentIDAtoms].resNumber = (*highestResidueNumber) + 1;
+		sprintf ((*atoms)[currentIDAtoms].resName, "H2O");
+		sprintf ((*atoms)[currentIDAtoms].atomName, "H2");
 		currentIDAtoms++;
+		(*highestResidueNumber)++;
 
 		// Adding bonds (bond1 and bond2 are identical)
 		// Bond 1
@@ -963,7 +973,7 @@ void createWaterTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **
 	}
 }
 
-void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **angles, DATA_DIHEDRALS **dihedrals, int nButanediol, DATA_ATOMS *butanediol, DATAFILE_INFO *datafile_raw, DATAFILE_INFO *datafile, int butanediolMolType)
+void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **angles, DATA_DIHEDRALS **dihedrals, int nButanediol, DATA_ATOMS *butanediol, DATAFILE_INFO *datafile_raw, DATAFILE_INFO *datafile, int butanediolMolType, int *highestResidueNumber)
 {
 	int currentIDAtoms = (*datafile_raw).nAtoms, currentIDBonds = (*datafile_raw).nBonds, currentIDAngles = (*datafile_raw).nAngles, currentIDDihedrals = (*datafile_raw).nDihedrals;
 
@@ -982,6 +992,9 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 		(*atoms)[currentIDAtoms].x = butanediol[i].x - 2.18;
 		(*atoms)[currentIDAtoms].y = butanediol[i].y + 1.29;
 		(*atoms)[currentIDAtoms].z = butanediol[i].z - 1.26;
+		(*atoms)[currentIDAtoms].resNumber = (*highestResidueNumber) + 1;
+		sprintf ((*atoms)[currentIDAtoms].resName, "BUT");
+		sprintf ((*atoms)[currentIDAtoms].atomName, "HB");
 		currentIDAtoms++;
 
 		// O
@@ -993,6 +1006,9 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 		(*atoms)[currentIDAtoms].x = butanediol[i].x - 1.93;
 		(*atoms)[currentIDAtoms].y = butanediol[i].y + 0.34;
 		(*atoms)[currentIDAtoms].z = butanediol[i].z - 1.36;
+		(*atoms)[currentIDAtoms].resNumber = (*highestResidueNumber) + 1;
+		sprintf ((*atoms)[currentIDAtoms].resName, "BUT");
+		sprintf ((*atoms)[currentIDAtoms].atomName, "OB");
 		currentIDAtoms++;
 
 		// CH2
@@ -1004,6 +1020,9 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 		(*atoms)[currentIDAtoms].x = butanediol[i].x - 0.53;
 		(*atoms)[currentIDAtoms].y = butanediol[i].y + 0.34;
 		(*atoms)[currentIDAtoms].z = butanediol[i].z - 1.37;
+		(*atoms)[currentIDAtoms].resNumber = (*highestResidueNumber) + 1;
+		sprintf ((*atoms)[currentIDAtoms].resName, "BUT");
+		sprintf ((*atoms)[currentIDAtoms].atomName, "CB");
 		currentIDAtoms++;
 
 		// CH2
@@ -1015,6 +1034,9 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 		(*atoms)[currentIDAtoms].x = butanediol[i].x;
 		(*atoms)[currentIDAtoms].y = butanediol[i].y;
 		(*atoms)[currentIDAtoms].z = butanediol[i].z;
+		(*atoms)[currentIDAtoms].resNumber = (*highestResidueNumber) + 1;
+		sprintf ((*atoms)[currentIDAtoms].resName, "BUT");
+		sprintf ((*atoms)[currentIDAtoms].atomName, "CB");
 		currentIDAtoms++;
 
 		// CH2
@@ -1026,6 +1048,9 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 		(*atoms)[currentIDAtoms].x = butanediol[i].x + 1.52;
 		(*atoms)[currentIDAtoms].y = butanediol[i].y;
 		(*atoms)[currentIDAtoms].z = butanediol[i].z;
+		(*atoms)[currentIDAtoms].resNumber = (*highestResidueNumber) + 1;
+		sprintf ((*atoms)[currentIDAtoms].resName, "BUT");
+		sprintf ((*atoms)[currentIDAtoms].atomName, "CB");
 		currentIDAtoms++;
 
 		// CH2
@@ -1037,6 +1062,9 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 		(*atoms)[currentIDAtoms].x = butanediol[i].x + 2.05;
 		(*atoms)[currentIDAtoms].y = butanediol[i].y - 1.25;
 		(*atoms)[currentIDAtoms].z = butanediol[i].z - 0.68;
+		(*atoms)[currentIDAtoms].resNumber = (*highestResidueNumber) + 1;
+		sprintf ((*atoms)[currentIDAtoms].resName, "BUT");
+		sprintf ((*atoms)[currentIDAtoms].atomName, "CB");
 		currentIDAtoms++;
 
 		// O
@@ -1048,6 +1076,9 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 		(*atoms)[currentIDAtoms].x = butanediol[i].x + 3.44;
 		(*atoms)[currentIDAtoms].y = butanediol[i].y - 1.23;
 		(*atoms)[currentIDAtoms].z = butanediol[i].z - 0.67;
+		(*atoms)[currentIDAtoms].resNumber = (*highestResidueNumber) + 1;
+		sprintf ((*atoms)[currentIDAtoms].resName, "BUT");
+		sprintf ((*atoms)[currentIDAtoms].atomName, "OB");
 		currentIDAtoms++;
 
 		// H
@@ -1059,6 +1090,10 @@ void createButanediolTopology (DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGL
 		(*atoms)[currentIDAtoms].x = butanediol[i].x + 3.67;
 		(*atoms)[currentIDAtoms].y = butanediol[i].y - 1.80;
 		(*atoms)[currentIDAtoms].z = butanediol[i].z + 0.92;
+		(*atoms)[currentIDAtoms].resNumber = (*highestResidueNumber) + 1;
+		sprintf ((*atoms)[currentIDAtoms].resName, "BUT");
+		sprintf ((*atoms)[currentIDAtoms].atomName, "HB");
+		(*highestResidueNumber)++;
 		currentIDAtoms++;
 
 		// Adding bonds
@@ -1591,7 +1626,7 @@ void assignResidues (DATA_ATOMS **atoms, DATA_BONDS *bonds, DATAFILE_INFO datafi
 	}
 }
 
-void assignResiduesFromFile (DATA_ATOMS **atoms, DATA_BONDS *bonds, DATAFILE_INFO datafile)
+void assignResiduesFromFile (DATA_ATOMS **atoms, DATA_BONDS *bonds, DATAFILE_INFO datafile, int *highestResidueNumber)
 {
 	char *resFilename, lineString[1000], **inputResName, **inputAtomName, tempResName[5], tempAtomName[5]; 
 	resFilename = (char *) malloc (50 * sizeof (char));
@@ -1601,7 +1636,7 @@ void assignResiduesFromFile (DATA_ATOMS **atoms, DATA_BONDS *bonds, DATAFILE_INF
 	FILE *readResidues;
 	readResidues = fopen (resFilename, "r");
 
-	int nResidue = 0, highestResidueNumber = 0, *inputResNumber, tempResNumber, atomID;
+	int nResidue = 0, *inputResNumber, tempResNumber, atomID;
 
 	while (fgets (lineString, 1000, readResidues) != NULL)
 	{
@@ -1654,8 +1689,8 @@ void assignResiduesFromFile (DATA_ATOMS **atoms, DATA_BONDS *bonds, DATAFILE_INF
 		strcpy ((*atoms)[i].atomName, inputAtomName[(*atoms)[i].atomType - 1]);
 		(*atoms)[i].resNumber = inputResNumber[(*atoms)[i].atomType - 1];
 
-		if (inputResNumber[(*atoms)[i].atomType - 1] > highestResidueNumber)
-			highestResidueNumber = inputResNumber[(*atoms)[i].atomType - 1];
+		if (inputResNumber[(*atoms)[i].atomType - 1] > (*highestResidueNumber))
+			(*highestResidueNumber) = inputResNumber[(*atoms)[i].atomType - 1];
 	}
 
 	// Assigning residues for Na ions
@@ -1663,16 +1698,23 @@ void assignResiduesFromFile (DATA_ATOMS **atoms, DATA_BONDS *bonds, DATAFILE_INF
 	{
 		if ((*atoms)[i].resNumber == 0)
 		{
-			(*atoms)[i].resNumber = highestResidueNumber + 1;
-			highestResidueNumber++;
+			(*atoms)[i].resNumber = (*highestResidueNumber) + 1;
+			(*highestResidueNumber)++;
 		}
 
 		fprintf(stdout, "%d %d %d %d %s %s\n", (*atoms)[i].id, (*atoms)[i].molType, (*atoms)[i].atomType, (*atoms)[i].resNumber, (*atoms)[i].resName, (*atoms)[i].atomName);
-		sleep (1);
 	}
 
 	fclose (readResidues);
-	exit (1);
+}
+
+void print_gro (FILE *outputGRO, DATA_ATOMS *atoms, DATAFILE_INFO datafile)
+{
+	for (int i = 0; i < datafile.nAtoms; ++i)
+	{
+		fprintf(stdout, "%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f\n", atoms[i].resNumber, atoms[i].resName, atoms[i].atomName, atoms[i].id, atoms[i].x, atoms[i].y, atoms[i].z, (float) 0, (float) 0, (float) 0);
+		sleep (1);
+	}
 }
 
 int main(int argc, char const *argv[])
@@ -1752,7 +1794,8 @@ int main(int argc, char const *argv[])
 
 	// Assign residues
 	// assignResidues (&atoms, bonds, datafile);
-	assignResiduesFromFile (&atoms, bonds, datafile);
+	int highestResidueNumber = 0;
+	assignResiduesFromFile (&atoms, bonds, datafile, &highestResidueNumber);
 
 	// Create solvent molecules
 	float solventDistance, butanediolFraction, waterFraction;
@@ -1795,8 +1838,8 @@ int main(int argc, char const *argv[])
 	else
 		butanediolMolType = 3;
 
-	createWaterTopology (&atoms, &bonds, &angles, nWater, water, &datafile_raw, &datafile, waterMolType);
-	createButanediolTopology (&atoms, &bonds, &angles, &dihedrals, nButanediol, butanediol, &datafile_raw, &datafile, butanediolMolType);
+	createWaterTopology (&atoms, &bonds, &angles, nWater, water, &datafile_raw, &datafile, waterMolType, &highestResidueNumber);
+	createButanediolTopology (&atoms, &bonds, &angles, &dihedrals, nButanediol, butanediol, &datafile_raw, &datafile, butanediolMolType, &highestResidueNumber);
 
 	// Recalculating nAtomTypes, nBondsTypes, nAngleTypes and nDihedralTypes after adding new solvent molecules
 	recalculateNAtoms (atoms, &datafile);
@@ -1814,11 +1857,8 @@ int main(int argc, char const *argv[])
 	print_dataDihedrals (output, dihedrals, datafile);
 	print_dataImpropers (output, impropers, datafile);
 
-	// Printing PDB file
-	// print_pdbAtoms (outputPDB, atoms, datafile);
-
 	// Printing GROMACS topology files
-	// print_gro (outputGRO);
+	print_gro (outputGRO, atoms, datafile);
 	// print_topol (outputTOP);
 
 	fclose (input);
@@ -1826,6 +1866,8 @@ int main(int argc, char const *argv[])
 	fclose (input2);
 	fclose (outputXYZ);
 	fclose (outputPDB);
+	fclose (outputGRO);
+	fclose (outputTOP);
 
 	return 0;
 }
