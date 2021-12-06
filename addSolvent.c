@@ -1386,7 +1386,16 @@ void assignResidues (DATA_ATOMS **atoms, DATA_BONDS *bonds, DATAFILE_INFO datafi
 										else
 										{
 											// resName and resNumber are not set for i'th atom, but they are set for one of the connected atom.
-											// The resName and resNumber of connectedAtom[3] becomes the resName and resNumber for i'th atom.
+											// resName and resNumber for all connected atoms are changed to connectedAtom[3]
+											(*atoms)[i].resNumber = (*atoms)[connectedAtoms[3] - 1].resNumber;
+											(*atoms)[connectedAtoms[0] - 1].resNumber = (*atoms)[connectedAtoms[3] - 1].resNumber;
+											(*atoms)[connectedAtoms[1] - 1].resNumber = (*atoms)[connectedAtoms[3] - 1].resNumber;
+											(*atoms)[connectedAtoms[2] - 1].resNumber = (*atoms)[connectedAtoms[3] - 1].resNumber;
+
+											strcpy ((*atoms)[i].resName, (*atoms)[connectedAtoms[3] - 1].resName);
+											strcpy ((*atoms)[connectedAtoms[0] - 1].resName, (*atoms)[connectedAtoms[3] - 1].resName);
+											strcpy ((*atoms)[connectedAtoms[1] - 1].resName, (*atoms)[connectedAtoms[3] - 1].resName);
+											strcpy ((*atoms)[connectedAtoms[2] - 1].resName, (*atoms)[connectedAtoms[3] - 1].resName);
 										}
 									}
 									else
@@ -1411,7 +1420,14 @@ void assignResidues (DATA_ATOMS **atoms, DATA_BONDS *bonds, DATAFILE_INFO datafi
 								else
 								{
 									// resName and resNumber are not set for i'th atom, but they are set for one of the connected atom.
-									// The resName and resNumber of connectedAtom[2] becomes the resName and resNumber for i'th atom.
+									// resName and resNumber for all connected atoms are changed to connectedAtom[2]
+									(*atoms)[i].resNumber = (*atoms)[connectedAtoms[2] - 1].resNumber;
+									(*atoms)[connectedAtoms[0] - 1].resNumber = (*atoms)[connectedAtoms[2] - 1].resNumber;
+									(*atoms)[connectedAtoms[1] - 1].resNumber = (*atoms)[connectedAtoms[2] - 1].resNumber;
+
+									strcpy ((*atoms)[i].resName, (*atoms)[connectedAtoms[2] - 1].resName);
+									strcpy ((*atoms)[connectedAtoms[0] - 1].resName, (*atoms)[connectedAtoms[2] - 1].resName);
+									strcpy ((*atoms)[connectedAtoms[1] - 1].resName, (*atoms)[connectedAtoms[2] - 1].resName);
 								}
 							}
 							else
@@ -1419,19 +1435,50 @@ void assignResidues (DATA_ATOMS **atoms, DATA_BONDS *bonds, DATAFILE_INFO datafi
 								// There are only 2 connected atoms.
 								// resName and resNumbe are not set for i'th atom and for other two connected atoms.
 								// Prompt the user to set resName and resNumber.
+								printf("Residue name and number are not set for atom: %d; and also for all connected atoms: %d %d %d %d\n", (*atoms)[i].id, connectedAtoms[0], connectedAtoms[1], connectedAtoms[2], connectedAtoms[3]);
+								printf("Residue name: [Maximum of 5 characters]  "); scanf ("%s", &(*atoms)[i].resName);
+								printf("Residue number: [Maximum of 5 digits]  "); scanf ("%s", &(*atoms)[i].resNumber);
+
+								// Change resName and resNumber for other two connected atoms
+								strcpy ((*atoms)[connectedAtoms[0] - 1].resName, (*atoms)[i].resName);
+								strcpy ((*atoms)[connectedAtoms[1] - 1].resName, (*atoms)[i].resName);
+
+								(*atoms)[connectedAtoms[0] - 1].resNumber = (*atoms)[i].resNumber;
+								(*atoms)[connectedAtoms[1] - 1].resNumber = (*atoms)[i].resNumber;
 							}
 						}
 						else
 						{
 							// resName and resNumber are not set for i'th atom, but they are set for one of the connected atom.
 							// The resName and resNumber of connectedAtom[1] becomes the resName and resNumber for i'th atom.
+							(*atoms)[i].resNumber = (*atoms)[connectedAtoms[1] - 1].resNumber;
+							(*atoms)[connectedAtoms[0] - 1].resNumber = (*atoms)[connectedAtoms[1] - 1].resNumber;
+
+							strcpy ((*atoms)[i].resName, (*atoms)[connectedAtoms[1] - 1].resName);
+							strcpy ((*atoms)[connectedAtoms[0] - 1].resName, (*atoms)[connectedAtoms[1] - 1].resName);
 						}
+					}
+					else
+					{
+						// i'th atom is connected to only one other atom.
+						// resName and resNumber are not set for any atom.
+						// Prompt the user to set resName and resNumber.
+						printf("Residue name and number are not set for atom: %d; and also for all connected atoms: %d %d %d %d\n", (*atoms)[i].id, connectedAtoms[0], connectedAtoms[1], connectedAtoms[2], connectedAtoms[3]);
+						printf("Residue name: [Maximum of 5 characters]  "); scanf ("%s", &(*atoms)[i].resName);
+						printf("Residue number: [Maximum of 5 digits]  "); scanf ("%s", &(*atoms)[i].resNumber);
+
+						// Change resName and resNumber for other connected atom
+						strcpy ((*atoms)[connectedAtoms[0] - 1].resName, (*atoms)[i].resName);
+
+						(*atoms)[connectedAtoms[0] - 1].resNumber = (*atoms)[i].resNumber;
 					}
 				}
 				else
 				{
 					// resName and resNumber are not set for i'th atom, but they are set for one of the connected atom.
 					// The resName and resNumber of connectedAtom[0] becomes the resName and resNumber for i'th atom.
+					(*atoms)[i].resNumber = (*atoms)[connectedAtoms[0] - 1].resNumber;
+					strcpy ((*atoms)[i].resName, (*atoms)[connectedAtoms[0] - 1].resName);
 				}
 			}
 		}
