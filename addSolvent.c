@@ -1702,19 +1702,30 @@ void assignResiduesFromFile (DATA_ATOMS **atoms, DATA_BONDS *bonds, DATAFILE_INF
 			(*highestResidueNumber)++;
 		}
 
-		fprintf(stdout, "%d %d %d %d %s %s\n", (*atoms)[i].id, (*atoms)[i].molType, (*atoms)[i].atomType, (*atoms)[i].resNumber, (*atoms)[i].resName, (*atoms)[i].atomName);
+		// fprintf(stdout, "%d %d %d %d %s %s\n", (*atoms)[i].id, (*atoms)[i].molType, (*atoms)[i].atomType, (*atoms)[i].resNumber, (*atoms)[i].resName, (*atoms)[i].atomName);
 	}
 
 	fclose (readResidues);
 }
 
-void print_gro (FILE *outputGRO, DATA_ATOMS *atoms, DATAFILE_INFO datafile)
+void print_gro (BOUNDS simBoxDimension, float scaleSimBoxDimension, FILE *outputGRO, DATA_ATOMS *atoms, DATAFILE_INFO datafile)
 {
+	simBoxDimension.xlo += ((scaleSimBoxDimension / 100) * simBoxDimension.xlo);
+	simBoxDimension.xhi += ((scaleSimBoxDimension / 100) * simBoxDimension.xhi);
+	simBoxDimension.ylo += ((scaleSimBoxDimension / 100) * simBoxDimension.ylo);
+	simBoxDimension.yhi += ((scaleSimBoxDimension / 100) * simBoxDimension.yhi);
+	simBoxDimension.zlo += ((scaleSimBoxDimension / 100) * simBoxDimension.zlo);
+	simBoxDimension.zhi += ((scaleSimBoxDimension / 100) * simBoxDimension.zhi);
+
+	float xDim = simBoxDimension.xhi - simBoxDimension.xlo, yDim = simBoxDimension.yhi - simBoxDimension.ylo, zDim = simBoxDimension.zhi - simBoxDimension.zlo;
+
+	fprintf(outputGRO, "%s\n", "NaPSS.gro file");
+	fprintf(outputGRO, "%d\n", datafile.nAtoms);
 	for (int i = 0; i < datafile.nAtoms; ++i)
 	{
-		fprintf(stdout, "%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f\n", atoms[i].resNumber, atoms[i].resName, atoms[i].atomName, atoms[i].id, atoms[i].x, atoms[i].y, atoms[i].z, (float) 0, (float) 0, (float) 0);
-		sleep (1);
+		fprintf(outputGRO, "%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f\n", atoms[i].resNumber, atoms[i].resName, atoms[i].atomName, atoms[i].id, atoms[i].x, atoms[i].y, atoms[i].z, (float) 0, (float) 0, (float) 0);
 	}
+	fprintf(outputGRO, "%.1f %.1f %.1f\n", xDim, yDim, zDim);
 }
 
 int main(int argc, char const *argv[])
@@ -1858,8 +1869,8 @@ int main(int argc, char const *argv[])
 	print_dataImpropers (output, impropers, datafile);
 
 	// Printing GROMACS topology files
-	print_gro (outputGRO, atoms, datafile);
-	// print_topol (outputTOP);
+	print_gro (simBoxDimension, scaleSimBoxDimension, outputGRO, atoms, datafile);
+	print_topol (outputTOP);
 
 	fclose (input);
 	fclose (output);
