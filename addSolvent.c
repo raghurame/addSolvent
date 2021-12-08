@@ -1728,6 +1728,17 @@ void print_gro (BOUNDS simBoxDimension, float scaleSimBoxDimension, FILE *output
 	fprintf(outputGRO, "%.1f %.1f %.1f\n", xDim, yDim, zDim);
 }
 
+void print_topol (outputTOP, atoms, bonds, angles, dihedrals, datafile)
+{
+	FILE *readAtomTypes;
+	char *atomTypesFilename;
+	atomTypesFilename = (char *) malloc (50 * sizeof (char));
+	atomTypesFilename = getInputFileName ();
+	readAtomTypes = fopen (atomTypesFilename, "r");
+
+	
+}
+
 int main(int argc, char const *argv[])
 {
 	printf("\n");
@@ -1870,7 +1881,7 @@ int main(int argc, char const *argv[])
 
 	// Printing GROMACS topology files
 	print_gro (simBoxDimension, scaleSimBoxDimension, outputGRO, atoms, datafile);
-	print_topol (outputTOP);
+	print_topol (outputTOP, atoms, bonds, angles, dihedrals, datafile);
 
 	fclose (input);
 	fclose (output);
