@@ -60,7 +60,8 @@ char *getInputFileName()
 	int fileRequired;
 	inputFileName = (char *) malloc (200 * sizeof (char));
 
-	printf("Enter the file extension or a match string to search in current directory... "); scanf ("%s", &fileExtension);
+	getFilenameAgain:
+	printf("Enter the file extension or a match string to search in current directory...\n --> "); scanf ("%s", &fileExtension);
 	// fgets (terminalString, sizeof (terminalString), stdin);
 	// sscanf (terminalString, "%s", fileExtension); 
 	printf("\n");
@@ -76,7 +77,7 @@ char *getInputFileName()
 	}
 	else
 	{
-		printf("No files found with the match string\n"); exit(1);
+		printf("No files found with the match string. Try again!\n"); goto getFilenameAgain;
 	}
 
 	nFiles = 0;
@@ -122,7 +123,7 @@ int getNatoms (const char *inputFileName)
 typedef struct datafile_atoms
 {
 	int resNumber;
-	char resName[5], atomName[5];
+	char resName[6], atomName[6], atomType2[6];
 
 	int id, molType, atomType;
 	float charge, x, y, z;
@@ -1631,12 +1632,14 @@ void assignResiduesFromFile (DATA_ATOMS **atoms, DATA_BONDS *bonds, DATAFILE_INF
 	char *resFilename, lineString[1000], **inputResName, **inputAtomName, tempResName[5], tempAtomName[5]; 
 	resFilename = (char *) malloc (50 * sizeof (char));
 
+	fprintf(stdout, "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\nREADING RESIDUE CONFIGURATION FROM FILE...\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n");
 	resFilename = getInputFileName ();
 
 	FILE *readResidues;
 	readResidues = fopen (resFilename, "r");
 
-	int nResidue = 0, *inputResNumber, tempResNumber, atomID;
+	int nResidue = 0, *inputResNumber, tempResNumber, atomID, *inputAtomType;
+	float *inputCharge;
 
 	while (fgets (lineString, 1000, readResidues) != NULL)
 	{
@@ -1646,12 +1649,14 @@ void assignResiduesFromFile (DATA_ATOMS **atoms, DATA_BONDS *bonds, DATAFILE_INF
 		}
 	}
 
-	fprintf(stdout, "%s\n", "Checking");
-	fflush (stdout);
+	// fprintf(stdout, "%s\n", "Checking");
+	// fflush (stdout);
 
 	inputResName = (char **) malloc (nResidue * sizeof (char *));
 	inputAtomName = (char **) malloc (nResidue * sizeof (char *));
 	inputResNumber = (int *) malloc (nResidue * sizeof (int));
+	inputCharge = (float *) malloc (nResidue * sizeof (float));
+	inputAtomType = (int *) malloc (nResidue * sizeof (int));
 
 	for (int i = 0; i < nResidue; ++i)
 	{
@@ -1665,35 +1670,41 @@ void assignResiduesFromFile (DATA_ATOMS **atoms, DATA_BONDS *bonds, DATAFILE_INF
 
 
 	rewind (readResidues);
+	// Storing residue information from config file
+	int currentResidue = 0;
 	while (fgets (lineString, 1000, readResidues) != NULL)
 	{
 		if (lineString[0] != '#')
 		{
-			sscanf (lineString, "%d %s %s %d\n", &tempResNumber, &tempResName, &tempAtomName, &atomID);
-			sprintf (inputResName[atomID - 1], "%s", tempResName);
-			sprintf (inputAtomName[atomID - 1], "%s", tempAtomName);
-			inputResNumber[atomID - 1] = tempResNumber;
+			sscanf (lineString, "%d %s %s %d %f\n", &inputResNumber[currentResidue], &tempResName, &tempAtomName, &inputAtomType[currentResidue], &inputCharge[currentResidue]);
+			strcpy (inputResName[currentResidue], tempResName);
+			strcpy (inputAtomName[currentResidue], tempAtomName);
+			currentResidue++;
 		}
 	}
 
-	for (int i = 0; i < nResidue; ++i)
-	{
-		printf("%s %s %d\n", inputResName[i], inputAtomName[i], inputResNumber[i]);
-	}
-
-	// Assigning residues for PSS chain
+	// Assigning residues for PSS chain based on charge and atomType
 	for (int i = 0; i < datafile.nAtoms; ++i)
 	{
-		// fprintf(stdout, "%d %d %d %d %s\n", (*atoms)[i].id, (*atoms)[i].molType, (*atoms)[i].atomType, inputResNumber[(*atoms)[i].atomType - 1], inputResName[(*atoms)[i].atomType - 1]);
-		strcpy ((*atoms)[i].resName, inputResName[(*atoms)[i].atomType - 1]);
-		strcpy ((*atoms)[i].atomName, inputAtomName[(*atoms)[i].atomType - 1]);
-		(*atoms)[i].resNumber = inputResNumber[(*atoms)[i].atomType - 1];
+		for (int j = 0; j < nResidue; ++j)
+		{
+			if ((*atoms)[i].charge == inputCharge[j] && (*atoms)[i].atomType == inputAtomType[j])
+			{
+				(*atoms)[i].resNumber = inputResNumber[j];
+				strcpy ((*atoms)[i].resName, inputResName[j]);
+				strcpy ((*atoms)[i].atomName, inputAtomName[j]);
+			}
+		}
 
-		if (inputResNumber[(*atoms)[i].atomType - 1] > (*highestResidueNumber))
-			(*highestResidueNumber) = inputResNumber[(*atoms)[i].atomType - 1];
+		// Checking the residue assignment for NaPSS
+		// fprintf(stdout, "%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f\n", (*atoms)[i].resNumber, (*atoms)[i].resName, (*atoms)[i].atomName, (*atoms)[i].id, (*atoms)[i].x, (*atoms)[i].y, (*atoms)[i].z, (float) 0, (float) 0, (float) 0);
+		// sleep (1);
+		if ((*atoms)[i].resNumber > (*highestResidueNumber))
+			(*highestResidueNumber) = (*atoms)[i].resNumber;
 	}
 
 	// Assigning residues for Na ions
+	// Since the resNumber for Na was given as '0' in config file
 	for (int i = 0; i < datafile.nAtoms; ++i)
 	{
 		if ((*atoms)[i].resNumber == 0)
@@ -1701,8 +1712,6 @@ void assignResiduesFromFile (DATA_ATOMS **atoms, DATA_BONDS *bonds, DATAFILE_INF
 			(*atoms)[i].resNumber = (*highestResidueNumber) + 1;
 			(*highestResidueNumber)++;
 		}
-
-		// fprintf(stdout, "%d %d %d %d %s %s\n", (*atoms)[i].id, (*atoms)[i].molType, (*atoms)[i].atomType, (*atoms)[i].resNumber, (*atoms)[i].resName, (*atoms)[i].atomName);
 	}
 
 	fclose (readResidues);
@@ -1728,14 +1737,146 @@ void print_gro (BOUNDS simBoxDimension, float scaleSimBoxDimension, FILE *output
 	fprintf(outputGRO, "%.1f %.1f %.1f\n", xDim, yDim, zDim);
 }
 
-void print_topol (outputTOP, atoms, bonds, angles, dihedrals, datafile)
+void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_ANGLES *angles, DATA_DIHEDRALS *dihedrals, DATAFILE_INFO datafile)
 {
-	FILE *readAtomTypes;
+	printf("nAtoms: %d\n", datafile.nAtoms);
+	printf("Setting the number of molecules as 3 as default (NaPSS, butanediol, and water).\n");
+	int nMolecules_top = 3;
+
 	char *atomTypesFilename;
 	atomTypesFilename = (char *) malloc (50 * sizeof (char));
+
+	// Loop by nMolecules_top = 3 times
+
+	char **atomName_top, **atomType_top, **particleType_top, lineString[5000], tempAtomName[6], tempAtomType[6], tempParticleType[6];
+	float *mass_top, *charge_top, *sigma_top, *epsilon_top;
+	char moleculeName[50];
+
+	memset (tempAtomName, '\0', sizeof (tempAtomName));
+	memset (tempAtomType, '\0', sizeof (tempAtomType));
+	memset (tempParticleType, '\0', sizeof (tempParticleType));
+
+	FILE *readAtomTypes;
+	int nAtomTypes = 0, currentEntry = 0;
+	printf("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\nREADING ATOM TYPES FOR TOPOLOGY FILE...\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n");
 	atomTypesFilename = getInputFileName ();
 	readAtomTypes = fopen (atomTypesFilename, "r");
 
+	printf("Enter the molecule name (to be included under [ moleculetype ] directive in topology file)\n");
+	scanf ("%s", &moleculeName);
+
+	// Reading the number of non-commented entries in input config file.
+	while (fgets (lineString, 5000, readAtomTypes) != NULL)
+	{
+		if (lineString[0] != '#')
+			nAtomTypes++;
+	}
+
+	// Initializing char types with length as nAtomTypes*5 (2D array)
+	atomName_top = (char **) malloc (nAtomTypes * sizeof (char *));
+	atomType_top = (char **) malloc (nAtomTypes * sizeof (char *));
+	particleType_top = (char **) malloc (nAtomTypes * sizeof (char *));
+
+	for (int i = 0; i < nAtomTypes; ++i)
+		atomName_top[i] = (char *) malloc (6 * sizeof (char));
+
+	for (int i = 0; i < nAtomTypes; ++i)
+		atomType_top[i] = (char *) malloc (6 * sizeof (char));
+
+	for (int i = 0; i < nAtomTypes; ++i)
+		particleType_top[i] = (char *) malloc (6 * sizeof (char));
+
+	// Initializing float types
+	mass_top = (float *) malloc (nAtomTypes * sizeof (float));
+	charge_top = (float *) malloc (nAtomTypes * sizeof (float));
+	sigma_top = (float *) malloc (nAtomTypes * sizeof (float));
+	epsilon_top = (float *) malloc (nAtomTypes * sizeof (float));
+
+	// Reading the data from input file
+	rewind (readAtomTypes);
+	while (fgets (lineString, 5000, readAtomTypes) != NULL)
+	{
+		if (lineString[0] != '#')
+		{
+			sscanf (lineString, "%s %s %f %f %s %f %f\n", &tempAtomName, &tempAtomType, &mass_top[currentEntry], &charge_top[currentEntry], &tempParticleType, &sigma_top[currentEntry], &epsilon_top[currentEntry]);
+			strncpy (atomName_top[currentEntry], tempAtomName, 5); atomName_top[currentEntry][5] = '\0';
+			strncpy (atomType_top[currentEntry], tempAtomType, 5); atomType_top[currentEntry][5] = '\0';
+			strncpy (particleType_top[currentEntry], tempParticleType, 5); particleType_top[currentEntry][5] = '\0';
+
+			// printf("%s %s %s\n", atomName_top[currentEntry], atomType_top[currentEntry], particleType_top[currentEntry]);
+
+			currentEntry++;
+		}
+	}
+
+	// for (int i = 0; i < nAtomTypes; ++i)
+	// {
+	// 	printf("%s %s %s\n", atomName_top[i], atomType_top[i], particleType_top[i]);
+	// 	sleep (1);
+	// }
+
+	printf("\n\nAtom types from input file: %s, ", atomType_top[0]);
+	for (int i = 1; i < nAtomTypes - 2; ++i)
+	{
+		printf("%s, ", atomType_top[i]);
+	}
+	printf("and %s.\n\n", atomType_top[nAtomTypes - 1]);
+
+	// Checking
+	// for (int i = 0; i < nAtomTypes; ++i)
+	// 	fprintf(stdout, "%s %s %f %f %s %f %f\n", atomName_top[i], atomType_top[i], mass_top[i], charge_top[i], particleType_top[i], sigma_top[i], epsilon_top[i]);
+
+	// Printing topology file
+	fprintf(outputTOP, "[ defaults ]\n1\t2\tyes\t1.0\t1.0\n\n[ atomtypes ]\n");
+
+	for (int i = 0; i < nAtomTypes; ++i)
+	{
+		fprintf(outputTOP, "%s %f %f %s %f %f\n", atomType_top[i], mass_top[i], charge_top[i], particleType_top[i], sigma_top[i], epsilon_top[i]);
+	}
+
+	fprintf(outputTOP, "[ moleculetype ]\n%s\t3\n\n", moleculeName);
+
+	fprintf(outputTOP, "[ atoms ]\n");
+
+	// Assigning atomType2 (this is a char type, while atomType is an int type) for all atoms
+	for (int i = 0; i < datafile.nAtoms; ++i)
+	{
+		// fprintf(stdout, "%s\n", (*atoms)[i].atomName);
+		sleep (1);
+		for (int j = 0; j < nAtomTypes; ++j)
+		{
+			if (strcmp (atomName_top[j], (*atoms)[i].atomName) == 0)
+			{
+				// printf("Atom name matches. Corresponding atomType2 is '%s'\n", atomType_top[j]);
+				strncpy ((*atoms)[i].atomType2, atomType_top[j], 5); (*atoms)[i].atomType2[5] = '\0';
+			}
+		}
+		fprintf(stdout, "%d\t%s\t%d\t%s\t%s\t%d\t%f\n", (*atoms)[i].id, (*atoms)[i].atomType2, 1, moleculeName, (*atoms)[i].atomName, (*atoms)[i].id, (*atoms)[i].charge);
+		fflush (stdout);
+	}
+
+	// Printing nAtoms entries under [ atoms ] directive
+	// for (int i = 0; i < datafile.nAtoms; ++i)
+	// {
+	// 	fprintf(outputTOP, "%d\t%s\t%d\t%s\t%s\t%d\t%f\n", );
+	// }
+
+	// Closing section for molecule
+	// fclose (readAtomTypes);
+	// free (atomName_top);
+	// free (atomType_top);
+	// free (particleType_top);
+	// free (mass_top);
+	// free (charge_top);
+	// free (sigma_top);
+	// free (epsilon_top);
+
+	// To do:
+	// Use molecule type and print the rest of topology file.
+	// Loop the above code in this function for other molecules as well.
+	// Ask user for the number of existing molecules
+	// For each molecule, the user must input a config file for topology
+	// JUST DO THIS QUICKLY !!
 	
 }
 
@@ -1881,7 +2022,7 @@ int main(int argc, char const *argv[])
 
 	// Printing GROMACS topology files
 	print_gro (simBoxDimension, scaleSimBoxDimension, outputGRO, atoms, datafile);
-	print_topol (outputTOP, atoms, bonds, angles, dihedrals, datafile);
+	print_topol (outputTOP, &atoms, bonds, angles, dihedrals, datafile);
 
 	fclose (input);
 	fclose (output);
