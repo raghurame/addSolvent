@@ -1764,7 +1764,7 @@ void print_gro (BOUNDS simBoxDimension, float scaleSimBoxDimension, FILE *output
 	fprintf(outputGRO, "%.1f %.1f %.1f\n", xDim, yDim, zDim);
 }
 
-void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_ANGLES *angles, DATA_DIHEDRALS *dihedrals, DATAFILE_INFO datafile)
+void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_ANGLES *angles, DATA_DIHEDRALS *dihedrals, DATA_IMPROPERS *impropers, DATAFILE_INFO datafile)
 {
 	printf("nAtoms: %d\n", datafile.nAtoms);
 	printf("Setting the number of molecules as 3 as default (NaPSS, butanediol, and water).\n");
@@ -1802,25 +1802,11 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// Printing temp files, which can later be read and assembled
-		FILE *atomTypesTopFile, *atomsTopFile, *bondsTopFile, *anglesTopFile, *dihedralTopFile;
-		char *atomTypesTopFilename, *atomsTopFilename, *bondsTopFilename, *anglesTopFilename, *dihedralTopFilename;
+		FILE *atomTypesTopFile;
+		char *atomTypesTopFilename;
 		atomTypesTopFilename = (char *) malloc (100 * sizeof (char));
-		atomsTopFilename = (char *) malloc (100 * sizeof (char));
-		bondsTopFilename = (char *) malloc (100 * sizeof (char));
-		anglesTopFilename = (char *) malloc (100 * sizeof (char));
-		dihedralTopFilename = (char *) malloc (100 * sizeof (char));
-
 		snprintf (atomTypesTopFilename, 100, "%s.atomtypes.top", moleculeName);
-		snprintf (atomsTopFilename, 100, "%s.atoms.top", moleculeName);
-		snprintf (bondsTopFilename, 100, "%s.bonds.top", moleculeName);
-		snprintf (anglesTopFilename, 100, "%s.angles.top", moleculeName);
-		snprintf (dihedralTopFilename, 100, "%s.dihedral.top", moleculeName);
-
 		atomTypesTopFile = fopen (atomTypesTopFilename, "w");
-		atomsTopFile = fopen (atomsTopFilename, "w");
-		bondsTopFile = fopen (bondsTopFilename, "w");
-		anglesTopFile = fopen (anglesTopFilename, "w");
-		dihedralTopFile = fopen (dihedralTopFilename, "w");
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 		// Getting config file for Nth molecule
@@ -1886,10 +1872,6 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 			fprintf(atomTypesTopFile, "%s %f %f %s %f %f\n", atomType_top[i], mass_top[i], charge_top[i], particleType_top[i], sigma_top[i], epsilon_top[i]);
 		}
 
-		// fprintf(outputTOP, "[ moleculetype ]\n%s\t3\n\n", moleculeName);
-
-		// fprintf(outputTOP, "[ atoms ]\n");
-
 		// Assigning atomType2 (this is a char type, while atomType is an int type) for all atoms
 		// atomType was made for LAMMPS datafile, whereas, atomType2 was made for GROMACS topology file
 		for (int i = 0; i < datafile.nAtoms; ++i)
@@ -1916,16 +1898,16 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 		free (epsilon_top);
 
 		fclose (atomTypesTopFile);
-		fclose (atomsTopFile);
-		fclose (bondsTopFile);
-		fclose (anglesTopFile);
-		fclose (dihedralTopFile);
+		// fclose (atomsTopFile);
+		// fclose (bondsTopFile);
+		// fclose (anglesTopFile);
+		// fclose (dihedralTopFile);
 
 		free (atomTypesTopFilename);
-		free (atomsTopFilename);
-		free (bondsTopFilename);
-		free (anglesTopFilename);
-		free (dihedralTopFilename);
+		// free (atomsTopFilename);
+		// free (bondsTopFilename);
+		// free (anglesTopFilename);
+		// free (dihedralTopFilename);
 	}
 
 	// Printing atoms directive section for all molecules
@@ -2027,7 +2009,7 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 				dihedrals[j].atom4 >= lowerIndex[i] && 
 				dihedrals[j].atom4 <= upperIndex[i])
 			{
-				
+				fprintf(dihedralTopFile, "%d\t%d\t%d\t%d\t%d\t%d\n", dihedrals[j].atom1, dihedrals[j].atom2, dihedrals[j].atom3, dihedrals[j].atom4, 1, dihedrals[j].dihedralType);
 			}
 		}
 
@@ -2042,7 +2024,7 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 				impropers[j].atom4 >= lowerIndex[i] && 
 				impropers[j].atom4 <= upperIndex[i])
 			{
-				
+				fprintf(dihedralTopFile, "%d\t%d\t%d\t%d\t%d\t%d\n", impropers[j].atom1, impropers[j].atom2, impropers[j].atom3, impropers[j].atom4, 2, impropers[j].improperType);
 			}
 		}
 	}
