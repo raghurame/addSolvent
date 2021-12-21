@@ -1980,6 +1980,73 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 		free (bondsTopFilename);
 	}
 
+	// Printing angles directive section for all molecules
+	for (int i = 0; i < nMolecules_top; ++i)
+	{
+		FILE *anglesTopFile;
+		char *anglesTopFilename;
+		anglesTopFilename = (char *) malloc (100 * sizeof (char));
+		snprintf (anglesTopFilename, 100, "%s.angles.top", allMoleculeNames[i]);
+		anglesTopFile = fopen (anglesTopFilename, "w");
+
+		for (int j = 0; j < datafile.nAngles; ++j)
+		{
+			if (angles[j].atom1 >= lowerIndex[i] && 
+				angles[j].atom1 <= upperIndex[i] && 
+				angles[j].atom2 >= lowerIndex[i] && 
+				angles[j].atom2 <= upperIndex[i] && 
+				angles[j].atom3 >= lowerIndex[i] && 
+				angles[j].atom3 <= upperIndex[i])
+			{
+				fprintf(anglesTopFile, "%d\t%d\t%d\t%d\t%d\n", angles[j].atom1, angles[j].atom2, angles[j].atom3, 2, angles[j].angleType);
+			}
+		}
+
+		fclose (anglesTopFile);
+		free (anglesTopFilename);
+	}
+
+	// Printing dihedral directive section for all molecules
+	// Both proper and improper dihedrals can be merged for GROMACS topology file
+	for (int i = 0; i < nMolecules_top; ++i)
+	{
+		FILE *dihedralTopFile;
+		char *dihedralTopFilename;
+		dihedralTopFilename = (char *) malloc (100 * sizeof (char));
+		snprintf (dihedralTopFilename, 100, "%s.dihedrals.top", allMoleculeNames[i]);
+		dihedralTopFile = fopen (dihedralTopFilename, "w");
+
+		for (int j = 0; j < datafile.nDihedrals; ++j)
+		{
+			if (dihedrals[j].atom1 >= lowerIndex[i] && 
+				dihedrals[j].atom1 <= upperIndex[i] && 
+				dihedrals[j].atom2 >= lowerIndex[i] && 
+				dihedrals[j].atom2 <= upperIndex[i] && 
+				dihedrals[j].atom3 >= lowerIndex[i] && 
+				dihedrals[j].atom3 <= upperIndex[i] && 
+				dihedrals[j].atom4 >= lowerIndex[i] && 
+				dihedrals[j].atom4 <= upperIndex[i])
+			{
+				
+			}
+		}
+
+		for (int j = 0; j < datafile.nImpropers; ++j)
+		{
+			if (impropers[j].atom1 >= lowerIndex[i] && 
+				impropers[j].atom1 <= upperIndex[i] && 
+				impropers[j].atom2 >= lowerIndex[i] && 
+				impropers[j].atom2 <= upperIndex[i] && 
+				impropers[j].atom3 >= lowerIndex[i] && 
+				impropers[j].atom3 <= upperIndex[i] && 
+				impropers[j].atom4 >= lowerIndex[i] && 
+				impropers[j].atom4 <= upperIndex[i])
+			{
+				
+			}
+		}
+	}
+
 	// Checking the atomType2 assignment
 	// for (int i = 0; i < datafile.nAtoms; ++i)
 	// {
@@ -2162,7 +2229,7 @@ int main(int argc, char const *argv[])
 
 	// Printing GROMACS topology files
 	print_gro (simBoxDimension, scaleSimBoxDimension, outputGRO, atoms, datafile);
-	print_topol (outputTOP, &atoms, bonds, angles, dihedrals, datafile);
+	print_topol (outputTOP, &atoms, bonds, angles, dihedrals, impropers, datafile);
 
 	fclose (input);
 	fclose (output);
