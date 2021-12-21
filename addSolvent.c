@@ -1828,7 +1828,7 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 		scanf ("%s", &moleculeName);
 
 		// Saving all molecule names for future reference
-		strncpy (allMoleculeNames[i], moleculeName, 50);
+		strncpy (allMoleculeNames[a], moleculeName, 50);
 
 		// Reading the number of non-commented entries in input config file.
 		while (fgets (lineString, 5000, readAtomTypes) != NULL)
@@ -1878,13 +1878,13 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 		}
 		printf("and %s.\n\n", atomType_top[nAtomTypes - 1]);
 
-		// Printing topology file
-		// fprintf(outputTOP, "[ defaults ]\n1\t2\tyes\t1.0\t1.0\n\n[ atomtypes ]\n");
+		// Printing atom types file
 
-		// for (int i = 0; i < nAtomTypes; ++i)
-		// {
-		// 	fprintf(outputTOP, "%s %f %f %s %f %f\n", atomType_top[i], mass_top[i], charge_top[i], particleType_top[i], sigma_top[i], epsilon_top[i]);
-		// }
+		fprintf(atomTypesTopFile, "[ atomtypes ]\n");
+		for (int i = 0; i < nAtomTypes; ++i)
+		{
+			fprintf(atomTypesTopFile, "%s %f %f %s %f %f\n", atomType_top[i], mass_top[i], charge_top[i], particleType_top[i], sigma_top[i], epsilon_top[i]);
+		}
 
 		// fprintf(outputTOP, "[ moleculetype ]\n%s\t3\n\n", moleculeName);
 
@@ -1914,23 +1914,85 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 		free (charge_top);
 		free (sigma_top);
 		free (epsilon_top);
+
+		fclose (atomTypesTopFile);
+		fclose (atomsTopFile);
+		fclose (bondsTopFile);
+		fclose (anglesTopFile);
+		fclose (dihedralTopFile);
+
+		free (atomTypesTopFilename);
+		free (atomsTopFilename);
+		free (bondsTopFilename);
+		free (anglesTopFilename);
+		free (dihedralTopFilename);
+	}
+
+	// Printing atoms directive section for all molecules
+	int atomIDTop = 1, *lowerIndex, *upperIndex;
+	lowerIndex = (int *) calloc (nMolecules_top, sizeof (int));
+	upperIndex = (int *) calloc (nMolecules_top, sizeof (int));
+
+	for (int i = 0; i < nMolecules_top; ++i)
+	{
+		atomIDTop = 1;
+		FILE *atomsTopFile;
+		char *atomsTopFilename;
+		atomsTopFilename = (char *) malloc (100 * sizeof (char));
+		snprintf (atomsTopFilename, 100, "%s.atoms.top", allMoleculeNames[i]);
+		fprintf(stdout, "Printing [ atoms ] directive for '%s' molecule. ==> filename: '%s'\n", allMoleculeNames[i], atomsTopFilename);
+		atomsTopFile = fopen (atomsTopFilename, "w");
+
+		for (int j = 0; j < datafile.nAtoms; ++j)
+		{
+			if (strcmp ((*atoms)[j].molName, allMoleculeNames[i]) == 0)
+			{
+				if (lowerIndex[i] == 0)
+					lowerIndex[i] = (*atoms)[j].id;
+
+				fprintf(atomsTopFile, "%d\t%s\t%d\t%s\t%s\t%d\t%.3f\n", atomIDTop, (*atoms)[j].atomType2, 1, (*atoms)[j].molName, (*atoms)[j].atomName, atomIDTop, (*atoms)[j].charge);
+				atomIDTop++;
+				upperIndex[i] = (*atoms)[j].id;
+			}
+		}
+
+		fclose (atomsTopFile);
+		free (atomsTopFilename);
+	}
+
+	// Printing bonds directive section for all molecules
+	for (int i = 0; i < nMolecules_top; ++i)
+	{
+		FILE *bondsTopFile;
+		char *bondsTopFilename;
+		bondsTopFilename = (char *) malloc (100 * sizeof (char));
+		snprintf (bondsTopFilename, 100, "%s.bonds.top", allMoleculeNames[i]);
+		fprintf(stdout, "Printing [ bonds ] directive for '%s' molecule. ==> filename: '%s'\n", allMoleculeNames[i], bondsTopFilename);
+		bondsTopFile = fopen (bondsTopFilename, "w");
+
+		for (int j = 0; j < datafile.nBonds; ++j)
+		{
+			if (bonds[j].atom1 >= lowerIndex[i] && bonds[j].atom1 <= upperIndex[i] && bonds[j].atom2 >= lowerIndex[i] && bonds[j].atom2 <= upperIndex[i])
+				fprintf(bondsTopFile, "%d\t%d\t%d\t%d\n", bonds[j].atom1, bonds[j].atom2, 2, bonds[j].bondType);
+		}
+
+		fclose (bondsTopFile);
+		free (bondsTopFilename);
 	}
 
 	// Checking the atomType2 assignment
-	for (int i = 0; i < datafile.nAtoms; ++i)
-	{
-		fprintf(stdout, "%d\t%s\t%d\t%s\t%s\t%d\t%.3f\n", (*atoms)[i].id, (*atoms)[i].atomType2, 1, (*atoms)[i].molName, (*atoms)[i].atomName, (*atoms)[i].id, (*atoms)[i].charge);
-		fflush (stdout);
-		if ((i%100) == 0)
-		{
-			sleep (1);
-		}
-	}
+	// for (int i = 0; i < datafile.nAtoms; ++i)
+	// {
+	// 	fprintf(stdout, "%d\t%s\t%d\t%s\t%s\t%d\t%.3f\n", (*atoms)[i].id, (*atoms)[i].atomType2, 1, (*atoms)[i].molName, (*atoms)[i].atomName, (*atoms)[i].id, (*atoms)[i].charge);
+	// 	fflush (stdout);
+	// 	if ((i % 100) == 0)
+	// 		sleep (1);
+	// }
 
 	// Checking stored molecule names
 	for (int i = 0; i < nMolecules_top; ++i)
 	{
-		fprintf(stdout, "allMoleculeNames[%d]: \n", allMoleculeNames[i], i);
+		fprintf(stdout, "allMoleculeNames[%d]: %s\n", i, allMoleculeNames[i]);
 	}
 
 	// Printing nAtoms entries under [ atoms ] directive
