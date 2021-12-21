@@ -1773,6 +1773,12 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 	char *atomTypesFilename;
 	atomTypesFilename = (char *) malloc (50 * sizeof (char));
 
+	// Storing all molecule names
+	char **allMoleculeNames;
+	allMoleculeNames = (char **) malloc (nMolecules_top * sizeof (char *));
+	for (int i = 0; i < nMolecules_top; ++i)
+		allMoleculeNames[i] = (char *) malloc (100 * sizeof (char));
+
 	// Variable initialization
 	char **atomName_top, **atomType_top, **particleType_top, lineString[5000], tempAtomName[6], tempAtomType[6], tempParticleType[6];
 	float *mass_top, *charge_top, *sigma_top, *epsilon_top;
@@ -1785,7 +1791,7 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 	FILE *readAtomTypes;
 
 	// Looping over all the molecules
-	for (int a = 0; a < 3; ++a)
+	for (int a = 0; a < nMolecules_top; ++a)
 	{
 		int nAtomTypes = 0, currentEntry = 0;
 		
@@ -1794,9 +1800,35 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 		atomTypesFilename = getInputFileName ();
 		readAtomTypes = fopen (atomTypesFilename, "r");
 
+		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// Printing temp files, which can later be read and assembled
+		FILE *atomTypesTopFile, *atomsTopFile, *bondsTopFile, *anglesTopFile, *dihedralTopFile;
+		char *atomTypesTopFilename, *atomsTopFilename, *bondsTopFilename, *anglesTopFilename, *dihedralTopFilename;
+		atomTypesTopFilename = (char *) malloc (100 * sizeof (char));
+		atomsTopFilename = (char *) malloc (100 * sizeof (char));
+		bondsTopFilename = (char *) malloc (100 * sizeof (char));
+		anglesTopFilename = (char *) malloc (100 * sizeof (char));
+		dihedralTopFilename = (char *) malloc (100 * sizeof (char));
+
+		snprintf (atomTypesTopFilename, 100, "%s.atomtypes.top", moleculeName);
+		snprintf (atomsTopFilename, 100, "%s.atoms.top", moleculeName);
+		snprintf (bondsTopFilename, 100, "%s.bonds.top", moleculeName);
+		snprintf (anglesTopFilename, 100, "%s.angles.top", moleculeName);
+		snprintf (dihedralTopFilename, 100, "%s.dihedral.top", moleculeName);
+
+		atomTypesTopFile = fopen (atomTypesTopFilename, "w");
+		atomsTopFile = fopen (atomsTopFilename, "w");
+		bondsTopFile = fopen (bondsTopFilename, "w");
+		anglesTopFile = fopen (anglesTopFilename, "w");
+		dihedralTopFile = fopen (dihedralTopFilename, "w");
+		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 		// Getting config file for Nth molecule
 		printf("Enter the molecule name (to be included under [ moleculetype ] directive in topology file)\n");
 		scanf ("%s", &moleculeName);
+
+		// Saving all molecule names for future reference
+		strncpy (allMoleculeNames[i], moleculeName, 50);
 
 		// Reading the number of non-commented entries in input config file.
 		while (fgets (lineString, 5000, readAtomTypes) != NULL)
@@ -1893,6 +1925,12 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 		{
 			sleep (1);
 		}
+	}
+
+	// Checking stored molecule names
+	for (int i = 0; i < nMolecules_top; ++i)
+	{
+		fprintf(stdout, "allMoleculeNames[%d]: \n", allMoleculeNames[i], i);
 	}
 
 	// Printing nAtoms entries under [ atoms ] directive
