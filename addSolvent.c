@@ -1869,7 +1869,7 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 		fprintf(atomTypesTopFile, "[ atomtypes ]\n");
 		for (int i = 0; i < nAtomTypes; ++i)
 		{
-			fprintf(atomTypesTopFile, "%s %f %f %s %f %f\n", atomType_top[i], mass_top[i], charge_top[i], particleType_top[i], sigma_top[i], epsilon_top[i]);
+			fprintf(atomTypesTopFile, "%s\t%f\t%f\t%s\t%f\t%f\n", atomType_top[i], mass_top[i], charge_top[i], particleType_top[i], sigma_top[i], epsilon_top[i]);
 		}
 
 		// Assigning atomType2 (this is a char type, while atomType is an int type) for all atoms
