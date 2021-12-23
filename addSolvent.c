@@ -1805,13 +1805,15 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 		FILE *atomTypesTopFile;
 		char *atomTypesTopFilename;
 		atomTypesTopFilename = (char *) malloc (100 * sizeof (char));
-		snprintf (atomTypesTopFilename, 100, "%s.atomtypes.top", moleculeName);
-		atomTypesTopFile = fopen (atomTypesTopFilename, "w");
 		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 		// Getting config file for Nth molecule
 		printf("Enter the molecule name (to be included under [ moleculetype ] directive in topology file)\n");
 		scanf ("%s", &moleculeName);
+
+		snprintf (atomTypesTopFilename, 100, "%s.atomtypes.top", moleculeName);
+		printf("Printing [ atomtypes ] directive in %s\n", atomTypesTopFilename);
+		atomTypesTopFile = fopen (atomTypesTopFilename, "w");
 
 		// Saving all molecule names for future reference
 		strncpy (allMoleculeNames[a], moleculeName, 50);
@@ -1882,9 +1884,6 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 				{
 					strncpy ((*atoms)[i].atomType2, atomType_top[j], 5); (*atoms)[i].atomType2[5] = '\0';
 					strncpy ((*atoms)[i].molName, moleculeName, 5); (*atoms)[i].molName[5] = '\0';
-					// printf("moleculeName: %s\n", moleculeName);
-					// printf("atoms[i].molName: %s\n", (*atoms)[i].molName);
-					// sleep (1);
 				}
 			}
 		}
@@ -1898,16 +1897,7 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 		free (epsilon_top);
 
 		fclose (atomTypesTopFile);
-		// fclose (atomsTopFile);
-		// fclose (bondsTopFile);
-		// fclose (anglesTopFile);
-		// fclose (dihedralTopFile);
-
 		free (atomTypesTopFilename);
-		// free (atomsTopFilename);
-		// free (bondsTopFilename);
-		// free (anglesTopFilename);
-		// free (dihedralTopFilename);
 	}
 
 	// Printing atoms directive section for all molecules
@@ -1925,6 +1915,7 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 		fprintf(stdout, "Printing [ atoms ] directive for '%s' molecule. ==> filename: '%s'\n", allMoleculeNames[i], atomsTopFilename);
 		atomsTopFile = fopen (atomsTopFilename, "w");
 
+		fprintf(atomsTopFile, "[ atoms ]\n");
 		for (int j = 0; j < datafile.nAtoms; ++j)
 		{
 			if (strcmp ((*atoms)[j].molName, allMoleculeNames[i]) == 0)
@@ -1951,6 +1942,7 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 		snprintf (bondsTopFilename, 100, "%s.bonds.top", allMoleculeNames[i]);
 		fprintf(stdout, "Printing [ bonds ] directive for '%s' molecule. ==> filename: '%s'\n", allMoleculeNames[i], bondsTopFilename);
 		bondsTopFile = fopen (bondsTopFilename, "w");
+		fprintf(bondsTopFile, "[ bonds ]\n");
 
 		for (int j = 0; j < datafile.nBonds; ++j)
 		{
@@ -1969,7 +1961,9 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 		char *anglesTopFilename;
 		anglesTopFilename = (char *) malloc (100 * sizeof (char));
 		snprintf (anglesTopFilename, 100, "%s.angles.top", allMoleculeNames[i]);
+		fprintf(stdout, "Printing [ angles ] directive for '%s' molecule. ==> filename: '%s'\n", allMoleculeNames[i], anglesTopFilename);
 		anglesTopFile = fopen (anglesTopFilename, "w");
+		fprintf(anglesTopFile, "[ angles ]\n");
 
 		for (int j = 0; j < datafile.nAngles; ++j)
 		{
@@ -1996,7 +1990,9 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 		char *dihedralTopFilename;
 		dihedralTopFilename = (char *) malloc (100 * sizeof (char));
 		snprintf (dihedralTopFilename, 100, "%s.dihedrals.top", allMoleculeNames[i]);
+		fprintf(stdout, "Printing [ dihedrals ] directive for '%s' molecule. ==> filename: '%s'\n", allMoleculeNames[i], dihedralTopFilename);
 		dihedralTopFile = fopen (dihedralTopFilename, "w");
+		fprintf(dihedralTopFile, "[ dihedrals ]\n");
 
 		for (int j = 0; j < datafile.nDihedrals; ++j)
 		{
@@ -2029,44 +2025,34 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 		}
 	}
 
-	// Checking the atomType2 assignment
-	// for (int i = 0; i < datafile.nAtoms; ++i)
-	// {
-	// 	fprintf(stdout, "%d\t%s\t%d\t%s\t%s\t%d\t%.3f\n", (*atoms)[i].id, (*atoms)[i].atomType2, 1, (*atoms)[i].molName, (*atoms)[i].atomName, (*atoms)[i].id, (*atoms)[i].charge);
-	// 	fflush (stdout);
-	// 	if ((i % 100) == 0)
-	// 		sleep (1);
-	// }
+	// Generating positional restraints
+	// The restraints for heavy atoms are stored in posre.itp
+	char *restrainMoleculeName;
+	restrainMoleculeName = (char *) malloc (100 * sizeof (char));
+	int nMoleculesToRestrain;
+	fprintf(stdout, "%s\t", "How many molecules to restrain?");
+	scanf ("%d", &nMoleculesToRestrain);
 
-	// Checking stored molecule names
-	for (int i = 0; i < nMolecules_top; ++i)
+	for (int i = 0; i < nMoleculesToRestrain; ++i)
 	{
-		fprintf(stdout, "allMoleculeNames[%d]: %s\n", i, allMoleculeNames[i]);
+		fprintf(stdout, "Enter the name of molecule - %2d to restrain...\t", i + 1);
+		scanf ("%s", restrainMoleculeName);
+
+		FILE *posre;
+		char *posreFilename;
+		posreFilename = (char *) malloc (100 * sizeof (char));
+		snprintf (posreFilename, 100, "%s.posre.itp", restrainMoleculeName);
+
+		posre = fopen (posreFilename, "w");
+
+		fprintf(posre, "[ position_restraints ]\n; atom\ttype\tfx\tfy\tfz\n");
+
+		for (int j = 0; j < datafile.nAtoms; ++j)
+		{
+			if (strcmp ((*atoms)[j].molName, restrainMoleculeName) == 0)
+				fprintf(posre, "%d\t%d\t%d\t%d\t%d\n", (*atoms)[j].id, 1, 1000, 1000, 1000);
+		}
 	}
-
-	// Printing nAtoms entries under [ atoms ] directive
-	// for (int i = 0; i < datafile.nAtoms; ++i)
-	// {
-	// 	fprintf(outputTOP, "%d\t%s\t%d\t%s\t%s\t%d\t%f\n", );
-	// }
-
-	// Closing section for molecule
-	// fclose (readAtomTypes);
-	// free (atomName_top);
-	// free (atomType_top);
-	// free (particleType_top);
-	// free (mass_top);
-	// free (charge_top);
-	// free (sigma_top);
-	// free (epsilon_top);
-
-	// To do:
-	// Use molecule type and print the rest of topology file.
-	// Loop the above code in this function for other molecules as well.
-	// Ask user for the number of existing molecules
-	// For each molecule, the user must input a config file for topology
-	// JUST DO THIS QUICKLY !!
-	
 }
 
 int main(int argc, char const *argv[])
