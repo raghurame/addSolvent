@@ -1764,6 +1764,22 @@ void print_gro (BOUNDS simBoxDimension, float scaleSimBoxDimension, FILE *output
 	fprintf(outputGRO, "%.1f %.1f %.1f\n", xDim, yDim, zDim);
 }
 
+int countNoncommentLines (FILE *input)
+{
+	rewind (input);
+	char lineString[1000];
+	int nLines = 0;
+
+	while (fgets (lineString, 1000, input) != NULL)
+	{
+		if (lineString[0] != '#')
+			nLines++;
+	}
+
+	rewind (input);
+	return nLines;
+}
+
 void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_ANGLES *angles, DATA_DIHEDRALS *dihedrals, DATA_IMPROPERS *impropers, DATAFILE_INFO datafile)
 {
 	printf("nAtoms: %d\n", datafile.nAtoms);
@@ -1934,6 +1950,102 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 	}
 
 	// Printing bonds directive section for all molecules
+
+	// reading force field parameters for bonds, from config file
+	FILE *bondsFFfile, *anglesFFfile, *dihedralsFFfile, *impropersFFfile;
+	char *bondsFFfilename, *anglesFFfilename, *dihedralsFFfilename, *impropersFFfilename;
+	bondsFFfilename = (char *) malloc (50 * sizeof (char));
+	anglesFFfilename = (char *) malloc (50 * sizeof (char));
+	dihedralsFFfilename = (char *) malloc (50 * sizeof (char));
+	impropersFFfilename = (char *) malloc (50 * sizeof (char));
+
+	printf("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\nREADING BOND CONFIGURATION FILE...\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n");
+	bondsFFfilename = getInputFileName ();
+	printf("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\nREADING ANGLE CONFIGURATION FILE...\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n");
+	anglesFFfilename = getInputFileName ();
+	printf("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\nREADING DIHEDRAL CONFIGURATION FILE...\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n");
+	dihedralsFFfilename = getInputFileName ();
+	printf("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\nREADING IMPROPER CONFIGURATION FILE...\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n");
+	impropersFFfilename = getInputFileName ();
+
+	bondsFFfile = fopen (bondsFFfilename, "r");
+	anglesFFfile = fopen (anglesFFfilename, "r");
+	dihedralsFFfile = fopen (dihedralsFFfilename, "r");
+	impropersFFfile = fopen (impropersFFfilename, "r");
+
+	int nBondTypesConfig = countNoncommentLines (bondsFFfile), nAngleTypesConfig = countNoncommentLines (anglesFFfile), nDihedralTypesConfig = countNoncommentLines (dihedralsFFfile), nImproperTypesConfig = countNoncommentLines (impropersFFfile);
+
+	char **bondTypeString, **angleTypeString, **dihedralTypeString, **improperTypeString, configString[1000];
+
+	bondTypeString = (char **) malloc (nBondTypesConfig * sizeof (char *));
+	angleTypeString = (char **) malloc (nAngleTypesConfig * sizeof (char *));
+	dihedralTypeString = (char **) malloc (nDihedralTypesConfig * sizeof (char *));
+	improperTypeString = (char **) malloc (nImproperTypesConfig * sizeof (char *));
+
+	for (int i = 0; i < nBondTypesConfig; ++i)
+		bondTypeString[i] = (char *) malloc (100 * sizeof (char));
+
+	for (int i = 0; i < nAngleTypesConfig; ++i)
+		angleTypeString[i] = (char *) malloc (100 * sizeof (char));
+
+	for (int i = 0; i < nDihedralTypesConfig; ++i)
+		dihedralTypeString[i] = (char *) malloc (100 * sizeof (char));
+
+	for (int i = 0; i < nImproperTypesConfig; ++i)
+		improperTypeString[i] = (char *) malloc (100 * sizeof (char));
+
+	int configLineNumber = 0;
+	rewind (bondsFFfile);
+	while (fgets (configString, 1000, bondsFFfile) != NULL)
+	{
+		if (configString[0] != '#')
+		{
+			strncpy (bondTypeString[configLineNumber], configString, 100);
+			configLineNumber++;
+		}
+	}
+	rewind (bondsFFfile);
+
+	configLineNumber = 0;
+	rewind (anglesFFfile);
+	while (fgets (configString, 1000, anglesFFfile) != NULL)
+	{
+		if (configString[0] != '#')
+		{
+			strncpy (angleTypeString[configLineNumber], configString, 100);
+			configLineNumber++;
+		}
+	}
+	rewind (anglesFFfile);
+
+	configLineNumber = 0;
+	rewind (dihedralsFFfile);
+	while (fgets (configString, 1000, dihedralsFFfile) != NULL)
+	{
+		if (configString[0] != '#')
+		{
+			strncpy (dihedralTypeString[configLineNumber], configString, 100);
+			configLineNumber++;
+		}
+	}
+	rewind (dihedralsFFfile);
+
+	configLineNumber = 0;
+	rewind (impropersFFfile);
+	while (fgets (configString, 1000, impropersFFfile) != NULL)
+	{
+		if (configString[0] != '#')
+		{
+			strncpy (improperTypeString[configLineNumber], configString, 100);
+			configLineNumber++;
+		}
+	}
+	rewind (impropersFFfile);
+	
+	// Variables to store forcefield parameters
+	int type, function;
+	float v1 = 0, v2 = 0, v3 = 0, v4 = 0, v5 = 0;
+
 	for (int i = 0; i < nMolecules_top; ++i)
 	{
 		FILE *bondsTopFile;
@@ -1947,7 +2059,31 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 		for (int j = 0; j < datafile.nBonds; ++j)
 		{
 			if (bonds[j].atom1 >= lowerIndex[i] && bonds[j].atom1 <= upperIndex[i] && bonds[j].atom2 >= lowerIndex[i] && bonds[j].atom2 <= upperIndex[i])
-				fprintf(bondsTopFile, "%d\t%d\t%d\t%d\n", bonds[j].atom1, bonds[j].atom2, 2, bonds[j].bondType);
+			{
+				for (int k = 0; k < nBondTypesConfig; ++k)
+				{
+					v1 = 0; v2 = 0; v3 = 0; v4 = 0; v5 = 0;
+					sscanf (bondTypeString[k], "%d %d\n", &type, &function);
+					if (bonds[j].bondType == type)
+					{
+						if (function == 6)
+						{
+							sscanf (bondTypeString[i], "%d %d %f %f\n", &type, &function, &v1, &v2);
+							// ~~~~~~
+							// TO DO:
+							// ~~~~~~
+							// CONVERT UNITS BEFORE PRITING TO FILE.
+							// CURRENTLY LAMMPS UNITS ARE BEING USED.
+							fprintf(stdout, "%d\t%d\t%d\t%f\t%f\n", bonds[j].atom1, bonds[j].atom2, function, v1, v2);
+						}
+						else
+						{
+							printf("Function currently not supported. The program will exit now!\n");
+							exit (1);
+						}
+					}
+				}
+			}
 		}
 
 		fclose (bondsTopFile);
@@ -1967,14 +2103,26 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 
 		for (int j = 0; j < datafile.nAngles; ++j)
 		{
-			if (angles[j].atom1 >= lowerIndex[i] && 
-				angles[j].atom1 <= upperIndex[i] && 
-				angles[j].atom2 >= lowerIndex[i] && 
-				angles[j].atom2 <= upperIndex[i] && 
-				angles[j].atom3 >= lowerIndex[i] && 
-				angles[j].atom3 <= upperIndex[i])
+			if (angles[j].atom1 >= lowerIndex[i] && angles[j].atom1 <= upperIndex[i] && angles[j].atom2 >= lowerIndex[i] && angles[j].atom2 <= upperIndex[i] && angles[j].atom3 >= lowerIndex[i] && angles[j].atom3 <= upperIndex[i])
 			{
-				fprintf(anglesTopFile, "%d\t%d\t%d\t%d\t%d\n", angles[j].atom1, angles[j].atom2, angles[j].atom3, 2, angles[j].angleType);
+				v1 = 0; v2 = 0; v3 = 0; v4 = 0; v5 = 0;
+				for (int k = 0; k < nAngleTypesConfig; ++k)
+				{
+					sscanf (angleTypeString[k], "%d %d\n", &type, &function);
+					if (angles[j].angleType == type)
+					{
+						if (function == 1)
+						{
+							sscanf (angleTypeString[k], "%d %d %f %f\n", &type, &function, &v1, &v2);
+							fprintf(stdout, "%d\t%d\t%d\t%d\t%f\t%f\n", angles[j].atom1, angles[j].atom2, angles[j].atom3, function, v1, v2);
+						}
+						else
+						{
+							printf("Function currently not supported. The program will exit now!\n");
+							exit (1);
+						}
+					}
+				}
 			}
 		}
 
@@ -1996,31 +2144,56 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 
 		for (int j = 0; j < datafile.nDihedrals; ++j)
 		{
-			if (dihedrals[j].atom1 >= lowerIndex[i] && 
-				dihedrals[j].atom1 <= upperIndex[i] && 
-				dihedrals[j].atom2 >= lowerIndex[i] && 
-				dihedrals[j].atom2 <= upperIndex[i] && 
-				dihedrals[j].atom3 >= lowerIndex[i] && 
-				dihedrals[j].atom3 <= upperIndex[i] && 
-				dihedrals[j].atom4 >= lowerIndex[i] && 
-				dihedrals[j].atom4 <= upperIndex[i])
+			if (dihedrals[j].atom1 >= lowerIndex[i] && dihedrals[j].atom1 <= upperIndex[i] && dihedrals[j].atom2 >= lowerIndex[i] && dihedrals[j].atom2 <= upperIndex[i] && dihedrals[j].atom3 >= lowerIndex[i] && dihedrals[j].atom3 <= upperIndex[i] && dihedrals[j].atom4 >= lowerIndex[i] && dihedrals[j].atom4 <= upperIndex[i])
 			{
-				fprintf(dihedralTopFile, "%d\t%d\t%d\t%d\t%d\t%d\n", dihedrals[j].atom1, dihedrals[j].atom2, dihedrals[j].atom3, dihedrals[j].atom4, 1, dihedrals[j].dihedralType);
+				for (int k = 0; k < nDihedralTypesConfig; ++k)
+				{
+					sscanf (dihedralTypeString[k], "%d %d\n", &type, &function);
+					v1 = 0; v2 = 0; v3 = 0; v4 = 0; v5 = 0;
+					if (dihedrals[j].dihedralType == type)
+					{
+						if (function == 1)
+						{
+							sscanf (dihedralTypeString[k], "%d %d %f %f\n", &type, &function, &v1, &v2);
+							fprintf(stdout, "%d\t%d\t%d\t%d\t%d\t%f\t%f\n", dihedrals[j].atom1, dihedrals[j].atom2, dihedrals[j].atom3, dihedrals[j].atom4, function, v1, v2);
+						}
+						else if (function == 5)
+						{
+							sscanf (dihedralTypeString[k], "%d %d %f %f %f %f %f\n", &type, &function, &v1, &v2, &v3, &v4, &v5);
+							fprintf(stdout, "%d\t%d\t%d\t%d\t%d\t%f\t%f\t%f\t%f\t%f\n", dihedrals[j].atom1, dihedrals[j].atom2, dihedrals[j].atom3, dihedrals[j].atom4, function, v1, v2, v3, v4, v5);
+						}
+						else
+						{
+							printf("Function currently not supported. The program will exit now!\n");
+							exit (1);
+						}
+					}
+				}
 			}
 		}
 
 		for (int j = 0; j < datafile.nImpropers; ++j)
 		{
-			if (impropers[j].atom1 >= lowerIndex[i] && 
-				impropers[j].atom1 <= upperIndex[i] && 
-				impropers[j].atom2 >= lowerIndex[i] && 
-				impropers[j].atom2 <= upperIndex[i] && 
-				impropers[j].atom3 >= lowerIndex[i] && 
-				impropers[j].atom3 <= upperIndex[i] && 
-				impropers[j].atom4 >= lowerIndex[i] && 
-				impropers[j].atom4 <= upperIndex[i])
+			if (impropers[j].atom1 >= lowerIndex[i] && impropers[j].atom1 <= upperIndex[i] && impropers[j].atom2 >= lowerIndex[i] && impropers[j].atom2 <= upperIndex[i] && impropers[j].atom3 >= lowerIndex[i] && impropers[j].atom3 <= upperIndex[i] && impropers[j].atom4 >= lowerIndex[i] && impropers[j].atom4 <= upperIndex[i])
 			{
-				fprintf(dihedralTopFile, "%d\t%d\t%d\t%d\t%d\t%d\n", impropers[j].atom1, impropers[j].atom2, impropers[j].atom3, impropers[j].atom4, 2, impropers[j].improperType);
+				for (int k = 0; k < nImproperTypesConfig; ++k)
+				{
+					sscanf (improperTypeString[k], "%d %d\n", &type, &function);
+					v1 = 0; v2 = 0; v3 = 0; v4 = 0; v5 = 0;
+					if (impropers[j].improperType == type)
+					{
+						if (function == 2)
+						{
+							sscanf (improperTypeString[k], "%d %d %f %f\n", &type, &function, &v1, &v2);
+							fprintf(stdout, "%d\t%d\t%d\t%d\t%d\t%f\t%f\n", impropers[j].atom1, impropers[j].atom2, impropers[j].atom3, impropers[j].atom4, function, v1, v2);
+						}
+						else
+						{
+							printf("Function currently not supported. The program will exit now!\n");
+							exit (1);
+						}
+					}
+				}
 			}
 		}
 	}
@@ -2053,6 +2226,16 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 				fprintf(posre, "%d\t%d\t%d\t%d\t%d\n", (*atoms)[j].id, 1, 1000, 1000, 1000);
 		}
 	}
+
+	fclose (bondsFFfile);
+	fclose (anglesFFfile);
+	fclose (dihedralsFFfile);
+	fclose (impropersFFfile);
+
+	free (bondsFFfilename);
+	free (anglesFFfilename);
+	free (dihedralsFFfilename);
+	free (impropersFFfilename);
 }
 
 int main(int argc, char const *argv[])
