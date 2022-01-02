@@ -2069,12 +2069,7 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 						if (function == 6)
 						{
 							sscanf (bondTypeString[i], "%d %d %f %f\n", &type, &function, &v1, &v2);
-							// ~~~~~~
-							// TO DO:
-							// ~~~~~~
-							// CONVERT UNITS BEFORE PRITING TO FILE.
-							// CURRENTLY LAMMPS UNITS ARE BEING USED.
-							fprintf(stdout, "%d\t%d\t%d\t%f\t%f\n", bonds[j].atom1, bonds[j].atom2, function, v1, v2);
+							fprintf(bondsTopFile, "%d\t%d\t%d\t%f\t%f\n", bonds[j].atom1, bonds[j].atom2, function, v1, v2);
 						}
 						else
 						{
@@ -2114,7 +2109,7 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 						if (function == 1)
 						{
 							sscanf (angleTypeString[k], "%d %d %f %f\n", &type, &function, &v1, &v2);
-							fprintf(stdout, "%d\t%d\t%d\t%d\t%f\t%f\n", angles[j].atom1, angles[j].atom2, angles[j].atom3, function, v1, v2);
+							fprintf(anglesTopFile, "%d\t%d\t%d\t%d\t%f\t%f\n", angles[j].atom1, angles[j].atom2, angles[j].atom3, function, v1, v2);
 						}
 						else
 						{
@@ -2155,12 +2150,12 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 						if (function == 1)
 						{
 							sscanf (dihedralTypeString[k], "%d %d %f %f\n", &type, &function, &v1, &v2);
-							fprintf(stdout, "%d\t%d\t%d\t%d\t%d\t%f\t%f\n", dihedrals[j].atom1, dihedrals[j].atom2, dihedrals[j].atom3, dihedrals[j].atom4, function, v1, v2);
+							fprintf(dihedralTopFile, "%d\t%d\t%d\t%d\t%d\t%f\t%f\n", dihedrals[j].atom1, dihedrals[j].atom2, dihedrals[j].atom3, dihedrals[j].atom4, function, v1, v2);
 						}
 						else if (function == 5)
 						{
 							sscanf (dihedralTypeString[k], "%d %d %f %f %f %f %f\n", &type, &function, &v1, &v2, &v3, &v4, &v5);
-							fprintf(stdout, "%d\t%d\t%d\t%d\t%d\t%f\t%f\t%f\t%f\t%f\n", dihedrals[j].atom1, dihedrals[j].atom2, dihedrals[j].atom3, dihedrals[j].atom4, function, v1, v2, v3, v4, v5);
+							fprintf(dihedralTopFile, "%d\t%d\t%d\t%d\t%d\t%f\t%f\t%f\t%f\t%f\n", dihedrals[j].atom1, dihedrals[j].atom2, dihedrals[j].atom3, dihedrals[j].atom4, function, v1, v2, v3, v4, v5);
 						}
 						else
 						{
@@ -2185,7 +2180,7 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 						if (function == 2)
 						{
 							sscanf (improperTypeString[k], "%d %d %f %f\n", &type, &function, &v1, &v2);
-							fprintf(stdout, "%d\t%d\t%d\t%d\t%d\t%f\t%f\n", impropers[j].atom1, impropers[j].atom2, impropers[j].atom3, impropers[j].atom4, function, v1, v2);
+							fprintf(dihedralTopFile, "%d\t%d\t%d\t%d\t%d\t%f\t%f\n", impropers[j].atom1, impropers[j].atom2, impropers[j].atom3, impropers[j].atom4, function, v1, v2);
 						}
 						else
 						{
