@@ -56,12 +56,12 @@ int displayFiles(const char *fileExtension)
 char *getInputFileName()
 {
 	int nFiles = 0;
-	char *inputFileName, fileExtension[200], terminalString[200];
+	char *inputFileName, fileExtension[200]/*, terminalString[200]*/;
 	int fileRequired;
 	inputFileName = (char *) malloc (200 * sizeof (char));
 
 	getFilenameAgain:
-	printf("Enter the file extension or a match string to search in current directory...\n --> "); scanf ("%s", &fileExtension);
+	printf("Enter the file extension or a match string to search in current directory...\n --> "); scanf ("%s", fileExtension);
 	// fgets (terminalString, sizeof (terminalString), stdin);
 	// sscanf (terminalString, "%s", fileExtension); 
 	printf("\n");
@@ -170,13 +170,13 @@ float findMaxChainDimension (const char *inputFile, int nAtoms)
 {
 	FILE *input;
 	input = fopen (inputFile, "r");
-	int nTimeframes = 0, arrayIndex = 0;
+	int nTimeframes = 0/*, arrayIndex = 0*/;
 	float maxDimension = 0, maxDimension_avg = 0, dimension;
 	char lineString[2000];
 
-	DUMP *traj, *traj_temp, com, dumpLow, dumpHigh;
+	DUMP *traj, /**traj_temp,*/ com, dumpLow, dumpHigh;
 	traj = (DUMP *) malloc (nAtoms * sizeof (DUMP));
-	traj_temp = (DUMP *) malloc (nAtoms * sizeof (DUMP));
+	// traj_temp = (DUMP *) malloc (nAtoms * sizeof (DUMP));
 	com.x = 0; com.y = 0; com.z = 0;
 
 	// Get simulation box dimensions from dump file
@@ -249,13 +249,13 @@ DUMP findMaxChainDimension_XYZ (const char *inputFile, int nAtoms)
 {
 	FILE *input;
 	input = fopen (inputFile, "r");
-	int nTimeframes = 0, arrayIndex = 0;
+	int nTimeframes = 0/*, arrayIndex = 0*/;
 	float maxDimension_x = 0, maxDimension_y = 0, maxDimension_z = 0, maxDimension_avg_x = 0, maxDimension_avg_y = 0, maxDimension_avg_z = 0, dimension_x, dimension_y, dimension_z;
 	char lineString[2000];
 
-	DUMP *traj, *traj_temp, com, dumpLow, dumpHigh, chainDimension;
+	DUMP *traj/*, *traj_temp*/, com, dumpLow, dumpHigh, chainDimension;
 	traj = (DUMP *) malloc (nAtoms * sizeof (DUMP));
-	traj_temp = (DUMP *) malloc (nAtoms * sizeof (DUMP));
+	// traj_temp = (DUMP *) malloc (nAtoms * sizeof (DUMP));
 	com.x = 0; com.y = 0; com.z = 0;
 
 	// Get simulation box dimensions from dump file
@@ -365,11 +365,11 @@ DATAFILE_INFO readData (const char *dataFileName, DATA_ATOMS **atoms, DATA_BONDS
 	FILE *input;
 	input = fopen (dataFileName, "r");
 
-	int isAtomLine = 0, nAtoms = -1, nAtomLine = 0;
-	int isBondLine = 0, nBonds = -1, nBondLine = 0;
-	int isAngleLine = 0, nAngles = -1, nAngleLine = 0;
-	int isDihedralLine = 0, nDihedrals = -1, nDihedralLine = 0;
-	int isImproperLine = 0, nImpropers = -1, nImproperLine = 0;
+	int isAtomLine = 0, /*nAtoms = -1,*/ nAtomLine = 0;
+	int isBondLine = 0, /*nBonds = -1,*/ nBondLine = 0;
+	int isAngleLine = 0, /*nAngles = -1,*/ nAngleLine = 0;
+	int isDihedralLine = 0, /*nDihedrals = -1,*/ nDihedralLine = 0;
+	int isImproperLine = 0, /*nImpropers = -1,*/ nImproperLine = 0;
 	int printHeaderInfo = 1;
 
 	DATAFILE_INFO datafile;
@@ -1485,10 +1485,10 @@ int *findConnectedAtoms (int id, DATA_BONDS *bonds, DATAFILE_INFO datafile)
 
 void assignResidues (DATA_ATOMS **atoms, DATA_BONDS *bonds, DATAFILE_INFO datafile)
 {
-	int *connectedAtoms, lastResNumber;
+	int *connectedAtoms/*, lastResNumber*/;
 	connectedAtoms = (int *) malloc (4 * sizeof (int));
 
-	char lastResName[5];
+	// char lastResName[5];
 
 	for (int i = 0; i < datafile.nAtoms; ++i)
 	{
@@ -1519,8 +1519,8 @@ void assignResidues (DATA_ATOMS **atoms, DATA_BONDS *bonds, DATAFILE_INFO datafi
 											// resName and resNumber for i'th atom and all the connected atoms are not set.
 											// Prompt the user to set resName and resNumber.
 											printf("Residue name and number are not set for atom: %d; and also for all connected atoms: %d %d %d %d\n", (*atoms)[i].id, connectedAtoms[0], connectedAtoms[1], connectedAtoms[2], connectedAtoms[3]);
-											printf("Residue name: [Maximum of 5 characters]  "); scanf ("%s", &(*atoms)[i].resName);
-											printf("Residue number: [Maximum of 5 digits]  "); scanf ("%s", &(*atoms)[i].resNumber);
+											printf("Residue name: [Maximum of 5 characters]  "); scanf ("%s", (*atoms)[i].resName);
+											printf("Residue number: [Maximum of 5 digits]  "); scanf ("%d", &(*atoms)[i].resNumber);
 
 											// Change resName and resNumber for all other connected atoms
 											strcpy ((*atoms)[connectedAtoms[0] - 1].resName, (*atoms)[i].resName);
@@ -1554,8 +1554,8 @@ void assignResidues (DATA_ATOMS **atoms, DATA_BONDS *bonds, DATAFILE_INFO datafi
 										// resName and resNumber for i'th atom and all three other connected atoms are not set.
 										// Prompt the user to set resName and resNumber.
 										printf("Residue name and number are not set for atom: %d; and also for all connected atoms: %d %d %d %d\n", (*atoms)[i].id, connectedAtoms[0], connectedAtoms[1], connectedAtoms[2], connectedAtoms[3]);
-										printf("Residue name: [Maximum of 5 characters]  "); scanf ("%s", &(*atoms)[i].resName);
-										printf("Residue number: [Maximum of 5 digits]  "); scanf ("%s", &(*atoms)[i].resNumber);
+										printf("Residue name: [Maximum of 5 characters]  "); scanf ("%s", (*atoms)[i].resName);
+										printf("Residue number: [Maximum of 5 digits]  "); scanf ("%d", &(*atoms)[i].resNumber);
 
 										// Change resName and resNumber for all other connected atoms
 										strcpy ((*atoms)[connectedAtoms[0] - 1].resName, (*atoms)[i].resName);
@@ -1586,8 +1586,8 @@ void assignResidues (DATA_ATOMS **atoms, DATA_BONDS *bonds, DATAFILE_INFO datafi
 								// resName and resNumbe are not set for i'th atom and for other two connected atoms.
 								// Prompt the user to set resName and resNumber.
 								printf("Residue name and number are not set for atom: %d; and also for all connected atoms: %d %d %d %d\n", (*atoms)[i].id, connectedAtoms[0], connectedAtoms[1], connectedAtoms[2], connectedAtoms[3]);
-								printf("Residue name: [Maximum of 5 characters]  "); scanf ("%s", &(*atoms)[i].resName);
-								printf("Residue number: [Maximum of 5 digits]  "); scanf ("%s", &(*atoms)[i].resNumber);
+								printf("Residue name: [Maximum of 5 characters]  "); scanf ("%s", (*atoms)[i].resName);
+								printf("Residue number: [Maximum of 5 digits]  "); scanf ("%d", &(*atoms)[i].resNumber);
 
 								// Change resName and resNumber for other two connected atoms
 								strcpy ((*atoms)[connectedAtoms[0] - 1].resName, (*atoms)[i].resName);
@@ -1614,8 +1614,8 @@ void assignResidues (DATA_ATOMS **atoms, DATA_BONDS *bonds, DATAFILE_INFO datafi
 						// resName and resNumber are not set for any atom.
 						// Prompt the user to set resName and resNumber.
 						printf("Residue name and number are not set for atom: %d; and also for all connected atoms: %d %d %d %d\n", (*atoms)[i].id, connectedAtoms[0], connectedAtoms[1], connectedAtoms[2], connectedAtoms[3]);
-						printf("Residue name: [Maximum of 5 characters]  "); scanf ("%s", &(*atoms)[i].resName);
-						printf("Residue number: [Maximum of 5 digits]  "); scanf ("%s", &(*atoms)[i].resNumber);
+						printf("Residue name: [Maximum of 5 characters]  "); scanf ("%s", (*atoms)[i].resName);
+						printf("Residue number: [Maximum of 5 digits]  "); scanf ("%d", &(*atoms)[i].resNumber);
 
 						// Change resName and resNumber for other connected atom
 						strcpy ((*atoms)[connectedAtoms[0] - 1].resName, (*atoms)[i].resName);
@@ -1665,7 +1665,7 @@ void assignResiduesFromFile (DATA_ATOMS **atoms, DATA_BONDS *bonds, DATAFILE_INF
 	FILE *readResidues;
 	readResidues = fopen (resFilename, "r");
 
-	int nResidue = 0, *inputResNumber, tempResNumber, atomID, *inputAtomType;
+	int nResidue = 0, *inputResNumber, /*tempResNumber, atomID,*/ *inputAtomType;
 	float *inputCharge;
 
 	while (fgets (lineString, 1000, readResidues) != NULL)
@@ -1703,7 +1703,7 @@ void assignResiduesFromFile (DATA_ATOMS **atoms, DATA_BONDS *bonds, DATAFILE_INF
 	{
 		if (lineString[0] != '#')
 		{
-			sscanf (lineString, "%d %s %s %d %f\n", &inputResNumber[currentResidue], &tempResName, &tempAtomName, &inputAtomType[currentResidue], &inputCharge[currentResidue]);
+			sscanf (lineString, "%d %s %s %d %f\n", &inputResNumber[currentResidue], tempResName, tempAtomName, &inputAtomType[currentResidue], &inputCharge[currentResidue]);
 			strcpy (inputResName[currentResidue], tempResName);
 			strcpy (inputAtomName[currentResidue], tempAtomName);
 			currentResidue++;
@@ -1798,7 +1798,7 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 	// Variable initialization
 	char **atomName_top, **atomType_top, **particleType_top, lineString[5000], tempAtomName[6], tempAtomType[6], tempParticleType[6];
 	float *mass_top, *charge_top, *sigma_top, *epsilon_top;
-	char moleculeName[50];
+	char moleculeName[5];
 
 	memset (tempAtomName, '\0', sizeof (tempAtomName));
 	memset (tempAtomType, '\0', sizeof (tempAtomType));
@@ -1825,14 +1825,14 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 
 		// Getting config file for Nth molecule
 		printf("Enter the molecule name (to be included under [ moleculetype ] directive in topology file)\n");
-		scanf ("%s", &moleculeName);
+		scanf ("%s", moleculeName);
 
 		snprintf (atomTypesTopFilename, 100, "%s.atomtypes.top", moleculeName);
 		printf("Printing [ atomtypes ] directive in %s\n", atomTypesTopFilename);
 		atomTypesTopFile = fopen (atomTypesTopFilename, "w");
 
 		// Saving all molecule names for future reference
-		strncpy (allMoleculeNames[a], moleculeName, 50);
+		strncpy (allMoleculeNames[a], moleculeName, 5);
 
 		// Reading the number of non-commented entries in input config file.
 		while (fgets (lineString, 5000, readAtomTypes) != NULL)
@@ -1867,7 +1867,7 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 		{
 			if (lineString[0] != '#')
 			{
-				sscanf (lineString, "%s %s %f %f %s %f %f\n", &tempAtomName, &tempAtomType, &mass_top[currentEntry], &charge_top[currentEntry], &tempParticleType, &sigma_top[currentEntry], &epsilon_top[currentEntry]);
+				sscanf (lineString, "%s %s %f %f %s %f %f\n", tempAtomName, tempAtomType, &mass_top[currentEntry], &charge_top[currentEntry], tempParticleType, &sigma_top[currentEntry], &epsilon_top[currentEntry]);
 				strncpy (atomName_top[currentEntry], tempAtomName, 5); atomName_top[currentEntry][5] = '\0';
 				strncpy (atomType_top[currentEntry], tempAtomType, 5); atomType_top[currentEntry][5] = '\0';
 				strncpy (particleType_top[currentEntry], tempParticleType, 5); particleType_top[currentEntry][5] = '\0';
@@ -1883,7 +1883,7 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 		printf("and %s.\n\n", atomType_top[nAtomTypes - 1]);
 
 		// Printing atom types file
-
+		// [ atomtypes ] directive in the topology file
 		fprintf(atomTypesTopFile, "[ atomtypes ]\n");
 		for (int i = 0; i < nAtomTypes; ++i)
 		{
@@ -1916,7 +1916,7 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 		free (atomTypesTopFilename);
 	}
 
-	// Printing atoms directive section for all molecules
+	// Printing [ atoms ] directive section for all molecules
 	int atomIDTop = 1, *lowerIndex, *upperIndex;
 	lowerIndex = (int *) calloc (nMolecules_top, sizeof (int));
 	upperIndex = (int *) calloc (nMolecules_top, sizeof (int));
@@ -1949,9 +1949,7 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 		free (atomsTopFilename);
 	}
 
-	// Printing bonds directive section for all molecules
-
-	// reading force field parameters for bonds, from config file
+	// Reading force field parameters for bonds, from config file
 	FILE *bondsFFfile, *anglesFFfile, *dihedralsFFfile, *impropersFFfile;
 	char *bondsFFfilename, *anglesFFfilename, *dihedralsFFfilename, *impropersFFfilename;
 	bondsFFfilename = (char *) malloc (50 * sizeof (char));
@@ -1975,7 +1973,7 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 
 	int nBondTypesConfig = countNoncommentLines (bondsFFfile), nAngleTypesConfig = countNoncommentLines (anglesFFfile), nDihedralTypesConfig = countNoncommentLines (dihedralsFFfile), nImproperTypesConfig = countNoncommentLines (impropersFFfile);
 
-	char **bondTypeString, **angleTypeString, **dihedralTypeString, **improperTypeString, configString[1000];
+	char **bondTypeString, **angleTypeString, **dihedralTypeString, **improperTypeString, configString[500];
 
 	bondTypeString = (char **) malloc (nBondTypesConfig * sizeof (char *));
 	angleTypeString = (char **) malloc (nAngleTypesConfig * sizeof (char *));
@@ -1983,24 +1981,24 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 	improperTypeString = (char **) malloc (nImproperTypesConfig * sizeof (char *));
 
 	for (int i = 0; i < nBondTypesConfig; ++i)
-		bondTypeString[i] = (char *) malloc (100 * sizeof (char));
+		bondTypeString[i] = (char *) malloc (500 * sizeof (char));
 
 	for (int i = 0; i < nAngleTypesConfig; ++i)
-		angleTypeString[i] = (char *) malloc (100 * sizeof (char));
+		angleTypeString[i] = (char *) malloc (500 * sizeof (char));
 
 	for (int i = 0; i < nDihedralTypesConfig; ++i)
-		dihedralTypeString[i] = (char *) malloc (100 * sizeof (char));
+		dihedralTypeString[i] = (char *) malloc (500 * sizeof (char));
 
 	for (int i = 0; i < nImproperTypesConfig; ++i)
-		improperTypeString[i] = (char *) malloc (100 * sizeof (char));
+		improperTypeString[i] = (char *) malloc (500 * sizeof (char));
 
 	int configLineNumber = 0;
 	rewind (bondsFFfile);
-	while (fgets (configString, 1000, bondsFFfile) != NULL)
+	while (fgets (configString, 500, bondsFFfile) != NULL)
 	{
 		if (configString[0] != '#')
 		{
-			strncpy (bondTypeString[configLineNumber], configString, 100);
+			strncpy (bondTypeString[configLineNumber], configString, 500);
 			configLineNumber++;
 		}
 	}
@@ -2008,11 +2006,11 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 
 	configLineNumber = 0;
 	rewind (anglesFFfile);
-	while (fgets (configString, 1000, anglesFFfile) != NULL)
+	while (fgets (configString, 500, anglesFFfile) != NULL)
 	{
 		if (configString[0] != '#')
 		{
-			strncpy (angleTypeString[configLineNumber], configString, 100);
+			strncpy (angleTypeString[configLineNumber], configString, 500);
 			configLineNumber++;
 		}
 	}
@@ -2020,11 +2018,11 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 
 	configLineNumber = 0;
 	rewind (dihedralsFFfile);
-	while (fgets (configString, 1000, dihedralsFFfile) != NULL)
+	while (fgets (configString, 500, dihedralsFFfile) != NULL)
 	{
 		if (configString[0] != '#')
 		{
-			strncpy (dihedralTypeString[configLineNumber], configString, 100);
+			strncpy (dihedralTypeString[configLineNumber], configString, 500);
 			configLineNumber++;
 		}
 	}
@@ -2032,19 +2030,32 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 
 	configLineNumber = 0;
 	rewind (impropersFFfile);
-	while (fgets (configString, 1000, impropersFFfile) != NULL)
+	while (fgets (configString, 500, impropersFFfile) != NULL)
 	{
 		if (configString[0] != '#')
 		{
-			strncpy (improperTypeString[configLineNumber], configString, 100);
+			strncpy (improperTypeString[configLineNumber], configString, 500);
 			configLineNumber++;
 		}
 	}
 	rewind (impropersFFfile);
-	
+
+	// Printing [ bonds ] directive section for all molecules
 	// Variables to store forcefield parameters
 	int type, function;
 	float v1 = 0, v2 = 0, v3 = 0, v4 = 0, v5 = 0;
+
+	// *firstAtom_bond pointer is used to store the ID of first bond in every molecule
+	// This can later be subtracted from all bonds[x].atomY IDs, to make sure the count 
+	// starts from '1' in every separate topology file
+	int firstAtom_top_index = 0, *firstAtom_top;
+	firstAtom_top = (int *) malloc (nMolecules_top * sizeof (int));
+
+	for (int i = 0; i < nMolecules_top; ++i)
+	{
+		firstAtom_top[firstAtom_top_index] = lowerIndex[i];
+		firstAtom_top_index++;
+	}
 
 	for (int i = 0; i < nMolecules_top; ++i)
 	{
@@ -2068,8 +2079,8 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 					{
 						if (function == 6)
 						{
-							sscanf (bondTypeString[i], "%d %d %f %f\n", &type, &function, &v1, &v2);
-							fprintf(bondsTopFile, "%d\t%d\t%d\t%f\t%f\n", bonds[j].atom1, bonds[j].atom2, function, v1, v2);
+							sscanf (bondTypeString[k], "%d %d %f %f\n", &type, &function, &v1, &v2);
+							fprintf(bondsTopFile, "%d\t%d\t%d\t%f\t%f\n", (bonds[j].atom1 - firstAtom_top[i] + 1), (bonds[j].atom2 - firstAtom_top[i] + 1), function, v1, v2);
 						}
 						else
 						{
@@ -2085,7 +2096,7 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 		free (bondsTopFilename);
 	}
 
-	// Printing angles directive section for all molecules
+	// Printing [ angles ] directive section for all molecules
 	for (int i = 0; i < nMolecules_top; ++i)
 	{
 		FILE *anglesTopFile;
@@ -2109,7 +2120,7 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 						if (function == 1)
 						{
 							sscanf (angleTypeString[k], "%d %d %f %f\n", &type, &function, &v1, &v2);
-							fprintf(anglesTopFile, "%d\t%d\t%d\t%d\t%f\t%f\n", angles[j].atom1, angles[j].atom2, angles[j].atom3, function, v1, v2);
+							fprintf(anglesTopFile, "%d\t%d\t%d\t%d\t%f\t%f\n", (angles[j].atom1 - firstAtom_top[i] + 1), (angles[j].atom2 - firstAtom_top[i] + 1), (angles[j].atom3 - firstAtom_top[i] + 1), function, v1, v2);
 						}
 						else
 						{
@@ -2150,12 +2161,12 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 						if (function == 1)
 						{
 							sscanf (dihedralTypeString[k], "%d %d %f %f\n", &type, &function, &v1, &v2);
-							fprintf(dihedralTopFile, "%d\t%d\t%d\t%d\t%d\t%f\t%f\n", dihedrals[j].atom1, dihedrals[j].atom2, dihedrals[j].atom3, dihedrals[j].atom4, function, v1, v2);
+							fprintf(dihedralTopFile, "%d\t%d\t%d\t%d\t%d\t%f\t%f\n", (dihedrals[j].atom1 - firstAtom_top[i] + 1), (dihedrals[j].atom2 - firstAtom_top[i] + 1), (dihedrals[j].atom3 - firstAtom_top[i] + 1), (dihedrals[j].atom4 - firstAtom_top[i] + 1), function, v1, v2);
 						}
 						else if (function == 5)
 						{
 							sscanf (dihedralTypeString[k], "%d %d %f %f %f %f %f\n", &type, &function, &v1, &v2, &v3, &v4, &v5);
-							fprintf(dihedralTopFile, "%d\t%d\t%d\t%d\t%d\t%f\t%f\t%f\t%f\t%f\n", dihedrals[j].atom1, dihedrals[j].atom2, dihedrals[j].atom3, dihedrals[j].atom4, function, v1, v2, v3, v4, v5);
+							fprintf(dihedralTopFile, "%d\t%d\t%d\t%d\t%d\t%f\t%f\t%f\t%f\t%f\n", (dihedrals[j].atom1 - firstAtom_top[i] + 1), (dihedrals[j].atom2 - firstAtom_top[i] + 1), (dihedrals[j].atom3 - firstAtom_top[i] + 1), (dihedrals[j].atom4 - firstAtom_top[i] + 1), function, v1, v2, v3, v4, v5);
 						}
 						else
 						{
@@ -2166,6 +2177,9 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 				}
 			}
 		}
+
+
+		// Printing the impropers under [ dihedrals ] directive
 
 		for (int j = 0; j < datafile.nImpropers; ++j)
 		{
@@ -2180,7 +2194,7 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 						if (function == 2)
 						{
 							sscanf (improperTypeString[k], "%d %d %f %f\n", &type, &function, &v1, &v2);
-							fprintf(dihedralTopFile, "%d\t%d\t%d\t%d\t%d\t%f\t%f\n", impropers[j].atom1, impropers[j].atom2, impropers[j].atom3, impropers[j].atom4, function, v1, v2);
+							fprintf(dihedralTopFile, "%d\t%d\t%d\t%d\t%d\t%f\t%f\n", (impropers[j].atom1 - firstAtom_top[i] + 1), (impropers[j].atom2 - firstAtom_top[i] + 1), (impropers[j].atom3 - firstAtom_top[i] + 1), (impropers[j].atom4 - firstAtom_top[i] + 1), function, v1, v2);
 						}
 						else
 						{
@@ -2242,9 +2256,9 @@ int main(int argc, char const *argv[])
 		printf("\nERROR: Insufficient arguments passed.\n\n   ARGS TO PASS:\n   ~~~~~~~~~~~~~\n\n * argv[0] = program\n * argv[1] = input dump file name\n * argv[2] = input data file\n * argv[3] = output file name (*.data and *.xyz will be saved)\n\nExample: ./addSolvent dump.lammpstrj output.data outputFolder/solvated\n\nLater, the program will prompt for a residue config file. Create a file named \"residue.config\" with the columns, \"resNumber resName atomName atomType\"\n\nNote that lines starting with \"#\" are considered as comment lines in the config file and they won't be considered.\n\n");
 		exit (1);
 	}
-	int nAtoms = getNatoms (argv[1]), lineCount = 0;
+	int nAtoms = getNatoms (argv[1])/*, lineCount = 0*/;
 
-	char *pipeString, lineString[1000], *outputData_filename, *outputXYZ_filename, *outputPDB_filename, *outputGRO_filename, *outputTOP_filename;
+	char *pipeString, /*lineString[1000],*/ *outputData_filename, *outputXYZ_filename, *outputPDB_filename, *outputGRO_filename, *outputTOP_filename;
 	pipeString = (char *) malloc (500 * sizeof (char));
 	outputData_filename = (char *) malloc (500 * sizeof (char));
 	outputXYZ_filename = (char *) malloc (500 * sizeof (char));
@@ -2268,7 +2282,7 @@ int main(int argc, char const *argv[])
 	outputGRO = fopen (outputGRO_filename, "w");
 	outputTOP = fopen (outputTOP_filename, "w");
 
-	DUMP *traj, com, dimLow, dimHigh, boxLength, dumpLow, dumpHigh, chainDimension;
+	DUMP *traj, com, /*dimLow, dimHigh, boxLength, dumpLow, dumpHigh,*/ chainDimension;
 	BOUNDS dumpDimension, simBoxDimension;
 	traj = (DUMP *) malloc (nAtoms * sizeof (DUMP));
 
@@ -2314,9 +2328,9 @@ int main(int argc, char const *argv[])
 	assignResiduesFromFile (&atoms, bonds, datafile, &highestResidueNumber);
 
 	// Create solvent molecules
-	float solventDistance, butanediolFraction, waterFraction;
-	DATA_ATOMS *water, water_com, recenterDistance, *butanediol, butanediol_com;
-	water_com.x = 0; water_com.y = 0; water_com.z = 0; butanediol_com.x = 0; butanediol_com.y = 0; butanediol_com.z = 0;
+	float /*solventDistance,*/ butanediolFraction, waterFraction;
+	DATA_ATOMS *water, /*water_com, recenterDistance,*/ *butanediol/*, butanediol_com*/;
+	// water_com.x = 0; water_com.y = 0; water_com.z = 0; butanediol_com.x = 0; butanediol_com.y = 0; butanediol_com.z = 0;
 
 	printf("Enter the volume fraction of butanediol [0 to 1]: "); scanf ("%f", &butanediolFraction); printf("\n");
 	int nButanediol = findNButanediol (butanediolFraction, simBoxDimension);
