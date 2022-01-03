@@ -2235,6 +2235,7 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 				fprintf(posre, "%d\t%d\t%d\t%d\t%d\n", (*atoms)[j].id, 1, 1000, 1000, 1000);
 		}
 	}
+	printf("posre file created...\n");
 
 	fclose (bondsFFfile);
 	fclose (anglesFFfile);
@@ -2245,6 +2246,47 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 	free (anglesFFfilename);
 	free (dihedralsFFfilename);
 	free (impropersFFfilename);
+
+	// Printing the shell script file to add all the above printed lines
+	FILE *joinFilesShell;
+	joinFilesShell = fopen ("createTopology.sh", "w");
+
+	char *moleculeType_top_filename;
+	moleculeType_top_filename = (char *) malloc (50 * sizeof (char));
+
+	// Printing [ moleculetype ] directive in separate files for all molecules
+	printf("\nGenerating [ moleculetype ] directive...\n\n");
+	for (int i = 0; i < nMolecules_top; ++i)
+	{
+		FILE *moleculeType_top;
+		snprintf (moleculeType_top_filename, 50, "%s.moleculetype", allMoleculeNames[i]);
+		moleculeType_top = fopen (moleculeType_top_filename, "w");
+		fprintf(moleculeType_top, "[ moleculetype ]\n%s\t3\n\n", allMoleculeNames[i]);
+		printf("\t|--> created '%s'...\n", moleculeType_top_filename);
+		fclose (moleculeType_top);
+	}
+
+	free (moleculeType_top_filename);
+
+	char *shell_filenames;
+	shell_filenames = (char *) malloc (50 * sizeof (char));
+
+	printf("\nGenerating shell script to combine the created topology files...\nEdit the script and run it manually...\n\n");
+	fprintf(outputTOP, "[ defaults ]\n1\t2\tyes\t1.0\t1.0\n\n");
+
+	for (int i = 0; i < nMolecules_top; ++i)
+	{
+		// atomtypes
+		snprintf (shell_filenames, 50, )
+		fprintf(joinFilesShell, "%s\n", );
+		// moleculetype
+		// atoms
+		// bonds
+		// angles
+		// dihedrals
+	}
+
+	fclose (joinFilesShell);
 }
 
 int main(int argc, char const *argv[])
