@@ -2268,8 +2268,7 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 
 	free (moleculeType_top_filename);
 
-	char *shell_filenames;
-	shell_filenames = (char *) malloc (50 * sizeof (char));
+	char isSolvent[10];
 
 	printf("\nGenerating shell script to combine the created topology files...\nEdit the script and run it manually...\n\n");
 	fprintf(outputTOP, "[ defaults ]\n1\t2\tyes\t1.0\t1.0\n\n");
@@ -2277,13 +2276,28 @@ void print_topol (FILE *outputTOP, DATA_ATOMS **atoms, DATA_BONDS *bonds, DATA_A
 	for (int i = 0; i < nMolecules_top; ++i)
 	{
 		// atomtypes
-		snprintf (shell_filenames, 50, )
-		fprintf(joinFilesShell, "%s\n", );
-		// moleculetype
-		// atoms
-		// bonds
-		// angles
-		// dihedrals
+		// snprintf (shell_filenames, 50, )
+		// fprintf(joinFilesShell, "%s\n", );
+		printf("Is '%s' a solvent molecule? (y/n)  : ", allMoleculeNames[i]); scanf ("%s", isSolvent); printf("\n");
+
+		if (isSolvent[0] == 'y' || isSolvent[0] == 'Y')
+		{
+			fprintf(joinFilesShell, "head %s.atomtypes.top >> solvated.top\n", allMoleculeNames[i]);
+			fprintf(joinFilesShell, "head %s.moleculetype >> solvated.top\n", allMoleculeNames[i]);
+			fprintf(joinFilesShell, "head %s.atoms.top >> solvated.top\n", allMoleculeNames[i]);
+			fprintf(joinFilesShell, "head %s.bonds.top >> solvated.top\n", allMoleculeNames[i]);
+			fprintf(joinFilesShell, "head %s.angles.top >> solvated.top\n", allMoleculeNames[i]);
+			fprintf(joinFilesShell, "head %s.dihedrals.top >> solvated.top\n", allMoleculeNames[i]);
+		}
+		else
+		{
+			fprintf(joinFilesShell, "cat %s.atomtypes.top >> solvated.top\n", allMoleculeNames[i]);
+			fprintf(joinFilesShell, "cat %s.moleculetype >> solvated.top\n", allMoleculeNames[i]);
+			fprintf(joinFilesShell, "cat %s.atoms.top >> solvated.top\n", allMoleculeNames[i]);
+			fprintf(joinFilesShell, "cat %s.bonds.top >> solvated.top\n", allMoleculeNames[i]);
+			fprintf(joinFilesShell, "cat %s.angles.top >> solvated.top\n", allMoleculeNames[i]);
+			fprintf(joinFilesShell, "cat %s.dihedrals.top >> solvated.top\n", allMoleculeNames[i]);
+		}
 	}
 
 	fclose (joinFilesShell);
