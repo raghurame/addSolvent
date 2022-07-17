@@ -283,31 +283,43 @@ DUMP findMaxChainDimension_XYZ (const char *inputFile, int nAtoms)
 		{
 			for (int i = 0; i < nAtoms; ++i)
 			{
-				fgets (lineString, 2000, input);
-				sscanf (lineString, "%d %d %f %f %f %f %f %f %d %d %d\n", &traj[i].id, &traj[i].type, &traj[i].x, &traj[i].y, &traj[i].z, &traj[i].xs, &traj[i].ys, &traj[i].zs, &traj[i].ix, &traj[i].iy, &traj[i].iz);
+					fgets (lineString, 2000, input);
+					sscanf (lineString, "%d %d %f %f %f %f %f %f %d %d %d\n", &traj[i].id, &traj[i].type, &traj[i].x, &traj[i].y, &traj[i].z, &traj[i].xs, &traj[i].ys, &traj[i].zs, &traj[i].ix, &traj[i].iy, &traj[i].iz);
 
-				traj[i].x = traj[i].x + traj[i].ix * (dumpHigh.x - dumpLow.x);
-				traj[i].y = traj[i].y + traj[i].iy * (dumpHigh.y - dumpLow.y);
-				traj[i].z = traj[i].z + traj[i].iz * (dumpHigh.z - dumpLow.z);
+					// printf("%d %d %f %f %f\n", traj[i].id, traj[i].type, traj[i].x, traj[i].y, traj[i].z);
+					// fflush (stdout);
+					// sleep (1);
 
-				com.x += traj[i].x;
-				com.y += traj[i].y;
-				com.z += traj[i].z;
+					// traj[i].x = traj[i].x + traj[i].ix * (dumpHigh.x - dumpLow.x);
+					// traj[i].y = traj[i].y + traj[i].iy * (dumpHigh.y - dumpLow.y);
+					// traj[i].z = traj[i].z + traj[i].iz * (dumpHigh.z - dumpLow.z);
+
+				if (traj[i].type < 7)
+				{
+					com.x += traj[i].x;
+					com.y += traj[i].y;
+					com.z += traj[i].z;
+				}
 			}
 
 			com.x /= nAtoms; com.y /= nAtoms; com.z /= nAtoms;
+			printf("com => %f %f %f\n", com.x, com.y, com.z);
 
 			for (int i = 0; i < nAtoms; ++i)
 			{
-				dimension_x = sqrt (pow ((traj[i].x - com.x), 2));
-				dimension_y = sqrt (pow ((traj[i].y - com.y), 2));
-				dimension_z = sqrt (pow ((traj[i].z - com.z), 2));
-				if (dimension_x > maxDimension_x)
-					maxDimension_x = dimension_x;
-				if (dimension_y > maxDimension_y)
-					maxDimension_y = dimension_y;
-				if (dimension_z > maxDimension_z)
-					maxDimension_z = dimension_z;
+				if (traj[i].type < 7)
+				{
+					dimension_x = sqrt (pow ((traj[i].x - com.x), 2));
+					dimension_y = sqrt (pow ((traj[i].y - com.y), 2));
+					dimension_z = sqrt (pow ((traj[i].z - com.z), 2));
+
+					if (dimension_x > maxDimension_x)
+						maxDimension_x = dimension_x;
+					if (dimension_y > maxDimension_y)
+						maxDimension_y = dimension_y;
+					if (dimension_z > maxDimension_z)
+						maxDimension_z = dimension_z;
+				}
 			}
 			maxDimension_avg_x += maxDimension_x;
 			maxDimension_avg_y += maxDimension_y;
@@ -614,21 +626,21 @@ DUMP *readLastFrame (const char *pipeString, int nAtoms, BOUNDS dumpDimension)
 	}
 
 	// Unwrap coordinates
-	for (int i = 0; i < nAtoms; ++i)
-	{
-		if (traj[i].ix > 0)
-			traj[i].x = (traj[i].x - dumpDimension.xlo) + dumpDimension.xhi;
-		else if (traj[i].ix < 0)
-			traj[i].x = dumpDimension.xlo - (dumpDimension.xhi - traj[i].x);
-		if (traj[i].iy > 0)
-			traj[i].y = (traj[i].y - dumpDimension.ylo) + dumpDimension.yhi;
-		else if (traj[i].iy < 0)
-			traj[i].y = dumpDimension.ylo - (dumpDimension.yhi - traj[i].y);
-		if (traj[i].iz > 0)
-			traj[i].z = (traj[i].z - dumpDimension.zlo) + dumpDimension.zhi;
-		else if (traj[i].iz < 0)
-			traj[i].z = dumpDimension.zlo - (dumpDimension.zhi - traj[i].z);
-	}
+	// for (int i = 0; i < nAtoms; ++i)
+	// {
+	// 	if (traj[i].ix > 0)
+	// 		traj[i].x = (traj[i].x - dumpDimension.xlo) + dumpDimension.xhi;
+	// 	else if (traj[i].ix < 0)
+	// 		traj[i].x = dumpDimension.xlo - (dumpDimension.xhi - traj[i].x);
+	// 	if (traj[i].iy > 0)
+	// 		traj[i].y = (traj[i].y - dumpDimension.ylo) + dumpDimension.yhi;
+	// 	else if (traj[i].iy < 0)
+	// 		traj[i].y = dumpDimension.ylo - (dumpDimension.yhi - traj[i].y);
+	// 	if (traj[i].iz > 0)
+	// 		traj[i].z = (traj[i].z - dumpDimension.zlo) + dumpDimension.zhi;
+	// 	else if (traj[i].iz < 0)
+	// 		traj[i].z = dumpDimension.zlo - (dumpDimension.zhi - traj[i].z);
+	// }
 
 	// Finding the center of mass
 	com.x = 0; com.y = 0; com.z = 0;
@@ -1358,10 +1370,23 @@ void print_datafileHeader (FILE *output, BOUNDS simBoxDimension, float scaleSimB
 	fflush (output);
 }
 
-void print_dataAtoms (FILE *output, DATA_ATOMS *atoms, DATAFILE_INFO datafile)
+void print_dataAtoms (FILE *output, BOUNDS simBoxDimension, float scaleSimBoxDimension, DATA_ATOMS *atoms, DATAFILE_INFO datafile)
 {
+	simBoxDimension.xlo += ((scaleSimBoxDimension / 100) * simBoxDimension.xlo);
+	simBoxDimension.xhi += ((scaleSimBoxDimension / 100) * simBoxDimension.xhi);
+	simBoxDimension.ylo += ((scaleSimBoxDimension / 100) * simBoxDimension.ylo);
+	simBoxDimension.yhi += ((scaleSimBoxDimension / 100) * simBoxDimension.yhi);
+	simBoxDimension.zlo += ((scaleSimBoxDimension / 100) * simBoxDimension.zlo);
+	simBoxDimension.zhi += ((scaleSimBoxDimension / 100) * simBoxDimension.zhi);
+
 	for (int i = 0; i < datafile.nAtoms; ++i)
 	{
+		if (atoms[i].x < simBoxDimension.xlo || atoms[i].x > simBoxDimension.xhi || atoms[i].y < simBoxDimension.ylo || atoms[i].y > simBoxDimension.yhi || atoms[i].z < simBoxDimension.zlo || atoms[i].z > simBoxDimension.zhi)
+		{
+			printf("%d %d %d %.4f %.4f %.4f %.4f\n", atoms[i].id, atoms[i].molType, atoms[i].atomType, atoms[i].charge, atoms[i].x, atoms[i].y, atoms[i].z);
+			sleep (1);
+		}
+
 		fprintf(output, "%d %d %d %.4f %.4f %.4f %.4f\n", atoms[i].id, atoms[i].molType, atoms[i].atomType, atoms[i].charge, atoms[i].x, atoms[i].y, atoms[i].z);
 		fflush (output);
 	}
@@ -2313,6 +2338,7 @@ int main(int argc, char const *argv[])
 		exit (1);
 	}
 	int nAtoms = getNatoms (argv[1])/*, lineCount = 0*/;
+	printf("Total number of atoms: %d\n", nAtoms);
 
 	char *pipeString, /*lineString[1000],*/ *outputData_filename, *outputXYZ_filename, *outputPDB_filename, *outputGRO_filename, *outputTOP_filename;
 	pipeString = (char *) malloc (500 * sizeof (char));
@@ -2436,7 +2462,7 @@ int main(int argc, char const *argv[])
 
 	// Printing LAMMPS datafile
 	print_datafileHeader (output, simBoxDimension, scaleSimBoxDimension, datafile);
-	print_dataAtoms (output, atoms, datafile);
+	print_dataAtoms (output, simBoxDimension, scaleSimBoxDimension, atoms, datafile);
 	print_XYZatoms (outputXYZ, atoms, datafile);
 	print_dataBonds (output, bonds, datafile);
 	print_dataAngles (output, angles, datafile);
